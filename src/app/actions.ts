@@ -19,7 +19,12 @@ export async function createStudentAction(
 ): Promise<ActionResult> {
   const name = String(formData.get("name") ?? "").trim();
   const phone = String(formData.get("phone") ?? "").trim();
+  const parentName = String(formData.get("parentName") ?? "").trim();
+  const parentPhone = String(formData.get("parentPhone") ?? "").trim();
+  const school = String(formData.get("school") ?? "").trim();
   const grade = String(formData.get("grade") ?? "").trim();
+  const course = String(formData.get("course") ?? "").trim();
+  const address = String(formData.get("address") ?? "").trim();
   const note = String(formData.get("note") ?? "").trim();
 
   if (!name) {
@@ -27,7 +32,17 @@ export async function createStudentAction(
   }
 
   try {
-    const student = await createStudent({ name, phone, grade, note });
+    const student = await createStudent({
+      name,
+      phone,
+      parentName,
+      parentPhone,
+      school,
+      grade,
+      course,
+      address,
+      note,
+    });
     revalidatePath("/");
     revalidatePath("/students");
     revalidatePath(`/students/${student.id}`);

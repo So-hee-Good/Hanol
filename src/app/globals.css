@@ -1,29 +1,48 @@
 @import "tailwindcss";
 
 :root {
-  --canvas: #f3efe6;
-  --ink: #1d2a2a;
-  --muted: #5f6d6c;
-  --line: #d8d1c4;
-  --accent: #2f6f6e;
-  --accent-strong: #245958;
+  --background: #f8fafc;
+  --foreground: #0f172a;
+  --surface: #ffffff;
+  --primary: #0f766e;
+  --primary-soft: #f0fdfa;
+  --border: #e2e8f0;
+  --muted: #64748b;
   --alert: #b0452f;
   --alert-soft: #f3d7cf;
   --ok: #2f6b45;
   --ok-soft: #d7eadc;
-  --background: var(--canvas);
-  --foreground: var(--ink);
+  --canvas: #f8fafc;
+  --ink: #0f172a;
+  --line: #e2e8f0;
+  --accent: #0f766e;
+  --accent-strong: #0d5f59;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-body);
-  --font-mono: var(--font-geist-mono);
+  --color-surface: var(--surface);
+  --color-primary: var(--primary);
+  --color-primary-soft: var(--primary-soft);
+  --color-border: var(--border);
+  --color-muted: var(--muted);
+  --font-sans: var(--font-plus-jakarta), var(--font-noto-sans-kr), ui-sans-serif,
+    sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
 }
 
 body {
-  background: var(--canvas);
-  color: var(--ink);
-  font-family: var(--font-body), "Apple SD Gothic Neo", sans-serif;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+::selection {
+  background: #ccfbf1;
+  color: #134e4a;
 }

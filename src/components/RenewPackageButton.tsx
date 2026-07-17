@@ -4,11 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { renewPackageAction } from "@/app/actions";
 
-type RenewPackageButtonProps = {
-  studentId: string;
-};
-
-export function RenewPackageButton({ studentId }: RenewPackageButtonProps) {
+export function RenewPackageButton({ studentId }: { studentId: string }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [message, setMessage] = useState<string | null>(null);
@@ -32,15 +28,15 @@ export function RenewPackageButton({ studentId }: RenewPackageButtonProps) {
             }
           });
         }}
-        className="rounded-xl bg-[var(--ink)] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-black disabled:opacity-50"
+        className="rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-black disabled:opacity-50"
       >
         {pending ? "등록 중..." : "결제 완료 · 4회 패키지 등록"}
       </button>
       {message ? (
-        <p className="text-sm font-medium text-[var(--ok)]">{message}</p>
+        <p className="text-sm font-medium text-emerald-700">{message}</p>
       ) : null}
       {error ? (
-        <p className="text-sm font-medium text-[var(--alert)]">{error}</p>
+        <p className="text-sm font-medium text-red-600">{error}</p>
       ) : null}
     </div>
   );

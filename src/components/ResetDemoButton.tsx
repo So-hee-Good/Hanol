@@ -18,7 +18,7 @@ export function ResetDemoButton() {
           router.refresh();
         });
       }}
-      className="rounded-full border border-[var(--line)] bg-white/80 px-4 py-2 text-sm text-[var(--muted)] transition hover:border-[var(--ink)] hover:text-[var(--ink)] disabled:opacity-50"
+      className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm text-slate-500 transition hover:border-slate-400 hover:text-slate-800 disabled:opacity-50"
     >
       {pending ? "초기화 중..." : "데모 데이터 초기화"}
     </button>

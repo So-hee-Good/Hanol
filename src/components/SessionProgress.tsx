@@ -27,13 +27,11 @@ export function SessionProgress({
       className="inline-flex items-baseline gap-3"
       aria-label={`수업 진행 ${used} / ${totalSessions}`}
     >
-      <span
-        className={`font-mono font-semibold text-[var(--ink)] ${sizeClass}`}
-      >
+      <span className={`font-mono font-semibold text-slate-900 ${sizeClass}`}>
         {blocks}
       </span>
-      <span className="text-[var(--muted)] tabular-nums">
-        <span className="font-semibold text-[var(--ink)]">{used}</span>
+      <span className="tabular-nums text-slate-500">
+        <span className="font-semibold text-slate-900">{used}</span>
         {" / "}
         {totalSessions}
       </span>

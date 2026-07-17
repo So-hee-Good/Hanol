@@ -4,12 +4,13 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { recordAttendanceAction } from "@/app/actions";
 
-type AttendanceFormProps = {
+export function AttendanceForm({
+  studentId,
+  disabled,
+}: {
   studentId: string;
   disabled?: boolean;
-};
-
-export function AttendanceForm({ studentId, disabled }: AttendanceFormProps) {
+}) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [message, setMessage] = useState<string | null>(null);
@@ -35,28 +36,28 @@ export function AttendanceForm({ studentId, disabled }: AttendanceFormProps) {
         });
       }}
     >
-      <label className="block text-sm text-[var(--muted)]">
+      <label className="block text-sm text-slate-500">
         출석 메모
         <input
           name="note"
           type="text"
           placeholder="예: 정규 수업"
           disabled={disabled || pending}
-          className="mt-1 w-full rounded-xl border border-[var(--line)] bg-white px-3 py-2 text-[var(--ink)] outline-none focus:border-[var(--accent)]"
+          className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-slate-900 outline-none focus:border-teal-400 focus:ring-4 focus:ring-teal-100 disabled:opacity-50"
         />
       </label>
       <button
         type="submit"
         disabled={disabled || pending}
-        className="rounded-xl bg-[var(--accent)] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[var(--accent-strong)] disabled:cursor-not-allowed disabled:opacity-50"
+        className="rounded-xl bg-teal-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-teal-800 disabled:cursor-not-allowed disabled:opacity-50"
       >
         {pending ? "처리 중..." : "출석 처리 (수업 1회 소모)"}
       </button>
       {message ? (
-        <p className="text-sm font-medium text-[var(--ok)]">{message}</p>
+        <p className="text-sm font-medium text-emerald-700">{message}</p>
       ) : null}
       {error ? (
-        <p className="text-sm font-medium text-[var(--alert)]">{error}</p>
+        <p className="text-sm font-medium text-red-600">{error}</p>
       ) : null}
     </form>
   );

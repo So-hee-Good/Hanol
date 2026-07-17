@@ -16,6 +16,7 @@ import type {
   StoreData,
   Student,
   StudentWithPackage,
+  TimelineEvent,
 } from "./types";
 
 const DATA_DIR = path.join(process.cwd(), ".data");
@@ -110,10 +111,46 @@ export async function listPaymentsForStudent(
     );
 }
 
+export async function listTimelineForStudent(
+  studentId: string,
+): Promise<TimelineEvent[]> {
+  const [attendances, payments] = await Promise.all([
+    listAttendancesForStudent(studentId),
+    listPaymentsForStudent(studentId),
+  ]);
+
+  const events: TimelineEvent[] = [
+    ...attendances.map((item) => ({
+      id: item.id,
+      type: "attendance" as const,
+      title: "출석",
+      description: item.note || "정규 수업 출석",
+      occurredAt: item.attendedAt,
+    })),
+    ...payments.map((item) => ({
+      id: item.id,
+      type: "payment" as const,
+      title: "패키지 등록",
+      description: item.note || `${item.sessionsGranted}회 수업 패키지`,
+      occurredAt: item.paidAt,
+    })),
+  ];
+
+  return events.sort(
+    (a, b) =>
+      new Date(b.occurredAt).getTime() - new Date(a.occurredAt).getTime(),
+  );
+}
+
 export async function createStudent(input: {
   name: string;
-  phone: string;
-  grade: string;
+  phone?: string;
+  parentName?: string;
+  parentPhone?: string;
+  school?: string;
+  grade?: string;
+  course?: string;
+  address?: string;
   note?: string;
 }): Promise<StudentWithPackage> {
   const data = await ensureStore();
@@ -121,8 +158,14 @@ export async function createStudent(input: {
   const student: Student = {
     id: `stu_${randomUUID().slice(0, 8)}`,
     name: input.name.trim(),
-    phone: input.phone.trim(),
-    grade: input.grade.trim(),
+    phone: input.phone?.trim() ?? "",
+    parentName: input.parentName?.trim() ?? "",
+    parentPhone: input.parentPhone?.trim() ?? "",
+    school: input.school?.trim() ?? "",
+    grade: input.grade?.trim() ?? "",
+    course: input.course?.trim() ?? "",
+    status: "active",
+    address: input.address?.trim() ?? "",
     note: input.note?.trim() ?? "",
     createdAt: now,
   };
