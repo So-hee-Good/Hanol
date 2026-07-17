@@ -9,7 +9,8 @@ export default function AdminLayout({
 }>) {
   return (
     <div className="flex min-h-screen bg-slate-50">
-      <div className="hidden lg:block">
+      {/* lg 이상: 사이드바 / 미만: Header 상단 탭 + 햄버거 */}
+      <div className="sticky top-0 hidden h-screen lg:block">
         <Sidebar />
       </div>
 

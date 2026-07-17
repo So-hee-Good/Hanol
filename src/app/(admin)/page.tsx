@@ -31,6 +31,26 @@ export default async function DashboardPage() {
             월 납부가 아닌 수업 횟수 패키지 기준입니다. 기본 4회, 출석마다 1회
             소모, 4/4면 결제 필요와 등록 안내가 자동으로 표시됩니다.
           </p>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <Link
+              href="/students"
+              className="rounded-full bg-teal-700 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-800"
+            >
+              학생 관리
+            </Link>
+            <Link
+              href="/attendance"
+              className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+            >
+              출결
+            </Link>
+            <Link
+              href="/payments"
+              className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+            >
+              수납
+            </Link>
+          </div>
         </div>
         <ResetDemoButton />
       </div>
