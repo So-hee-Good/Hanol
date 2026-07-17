@@ -142,6 +142,36 @@ export async function listTimelineForStudent(
   );
 }
 
+export async function listRecentAttendances(limit = 20): Promise<
+  Array<{
+    id: string;
+    studentId: string;
+    studentName: string;
+    attendedAt: string;
+    note: string;
+  }>
+> {
+  const data = await ensureStore();
+  const nameById = new Map(
+    data.students.map((student) => [student.id, student.name]),
+  );
+
+  return data.attendances
+    .slice()
+    .sort(
+      (a, b) =>
+        new Date(b.attendedAt).getTime() - new Date(a.attendedAt).getTime(),
+    )
+    .slice(0, limit)
+    .map((item) => ({
+      id: item.id,
+      studentId: item.studentId,
+      studentName: nameById.get(item.studentId) ?? "알 수 없음",
+      attendedAt: item.attendedAt,
+      note: item.note,
+    }));
+}
+
 export async function createStudent(input: {
   name: string;
   phone?: string;

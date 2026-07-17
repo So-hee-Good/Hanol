@@ -9,9 +9,9 @@ export function Header() {
       <div className="flex items-center gap-3">
         <MobileNav />
         <div>
-          <p className="text-sm font-semibold text-slate-900">한올 관리자</p>
+          <p className="text-sm font-semibold text-slate-900">HANOL 통합 관리자</p>
           <p className="text-xs text-slate-500">
-            학생 관리 · 수업 횟수 패키지
+            학생 · 출결 · 수납 · 수업 횟수
           </p>
         </div>
       </div>

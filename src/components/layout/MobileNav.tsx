@@ -3,22 +3,9 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  LayoutDashboard,
-  Menu,
-  Settings,
-  UserPlus,
-  Users,
-  X,
-} from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { cn } from "@/lib/cn";
-
-const navItems = [
-  { href: "/", label: "대시보드", icon: LayoutDashboard },
-  { href: "/students", label: "학생 관리", icon: Users },
-  { href: "/students/new", label: "학생 등록", icon: UserPlus },
-  { href: "/settings", label: "설정", icon: Settings },
-] as const;
+import { isNavActive, NAV_ITEMS } from "@/lib/nav";
 
 export function MobileNav() {
   const [open, setOpen] = useState(false);
@@ -51,7 +38,7 @@ export function MobileNav() {
                 </div>
                 <div>
                   <p className="text-sm font-semibold text-slate-900">HANOL</p>
-                  <p className="text-xs text-slate-500">관리자</p>
+                  <p className="text-xs text-slate-500">통합 관리자</p>
                 </div>
               </div>
               <button
@@ -65,13 +52,9 @@ export function MobileNav() {
             </div>
 
             <nav className="flex flex-1 flex-col gap-1 p-4">
-              {navItems.map((item) => {
+              {NAV_ITEMS.map((item) => {
                 const Icon = item.icon;
-                const isActive =
-                  item.href === "/"
-                    ? pathname === "/"
-                    : pathname === item.href ||
-                      pathname.startsWith(`${item.href}/`);
+                const active = isNavActive(pathname, item.href);
 
                 return (
                   <Link
@@ -80,7 +63,7 @@ export function MobileNav() {
                     onClick={() => setOpen(false)}
                     className={cn(
                       "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors",
-                      isActive
+                      active
                         ? "bg-teal-50 text-teal-800"
                         : "text-slate-600 hover:bg-slate-50",
                     )}

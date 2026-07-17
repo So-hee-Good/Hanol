@@ -2,20 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  LayoutDashboard,
-  Settings,
-  UserPlus,
-  Users,
-} from "lucide-react";
 import { cn } from "@/lib/cn";
-
-const navItems = [
-  { href: "/", label: "대시보드", icon: LayoutDashboard },
-  { href: "/students", label: "학생 관리", icon: Users },
-  { href: "/students/new", label: "학생 등록", icon: UserPlus },
-  { href: "/settings", label: "설정", icon: Settings },
-] as const;
+import { isNavActive, NAV_ITEMS } from "@/lib/nav";
 
 export function Sidebar() {
   const pathname = usePathname();
@@ -30,22 +18,14 @@ export function Sidebar() {
           <p className="text-sm font-semibold tracking-tight text-slate-900">
             HANOL
           </p>
-          <p className="text-xs text-slate-500">수업 횟수 관리</p>
+          <p className="text-xs text-slate-500">통합 관리자</p>
         </div>
       </div>
 
       <nav className="flex flex-1 flex-col gap-1 p-4">
-        {navItems.map((item) => {
+        {NAV_ITEMS.map((item) => {
           const Icon = item.icon;
-          const isActive =
-            item.href === "/"
-              ? pathname === "/"
-              : item.href === "/students"
-                ? pathname === "/students" ||
-                  (pathname.startsWith("/students/") &&
-                    !pathname.startsWith("/students/new"))
-                : pathname === item.href ||
-                  pathname.startsWith(`${item.href}/`);
+          const active = isNavActive(pathname, item.href);
 
           return (
             <Link
@@ -53,7 +33,7 @@ export function Sidebar() {
               href={item.href}
               className={cn(
                 "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors",
-                isActive
+                active
                   ? "bg-teal-50 text-teal-800"
                   : "text-slate-600 hover:bg-slate-50 hover:text-slate-900",
               )}
@@ -61,7 +41,7 @@ export function Sidebar() {
               <Icon
                 className={cn(
                   "h-4 w-4",
-                  isActive ? "text-teal-700" : "text-slate-400",
+                  active ? "text-teal-700" : "text-slate-400",
                 )}
                 strokeWidth={1.75}
               />
@@ -77,7 +57,9 @@ export function Sidebar() {
           <p className="mt-0.5 text-sm font-semibold text-slate-800">
             한올 위례캠퍼스
           </p>
-          <p className="mt-1 text-xs text-slate-500">기본 패키지 4회 · 월납 없음</p>
+          <p className="mt-1 text-xs text-slate-500">
+            학생 · 출결 · 수납 · 4회 패키지
+          </p>
         </div>
       </div>
     </aside>
