@@ -155,18 +155,25 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const markPayment = useCallback(
     (studentId: string, amount: number, note = "") => {
-      setData((prev) => {
-        const student = prev.students.find((s) => s.id === studentId);
-        if (!student) return prev;
-        const { student: next, payment } = completePayment(
-          student,
-          amount,
-          note
-        );
+      setData((data) => {
+        const student = data.students.find((s) => s.id === studentId);
+        if (!student) return data;
+        const { payment } = completePayment(student, amount, note);
+
         return {
-          ...prev,
-          students: prev.students.map((s) => (s.id === studentId ? next : s)),
-          payments: [payment, ...prev.payments],
+          ...data,
+          students: data.students.map((item) =>
+            item.id === studentId
+              ? {
+                  ...item,
+                  usedCount: 0,
+                  paymentStatus: "normal" as const,
+                  lastPaymentAt: payment.paidAt,
+                  updatedAt: payment.paidAt,
+                }
+              : item
+          ),
+          payments: [payment, ...data.payments],
         };
       });
     },

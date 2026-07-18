@@ -1,6 +1,6 @@
 export type StudentStatus = "active" | "paused" | "withdrawn";
 
-export type PaymentStatus = "paid" | "due";
+export type PaymentStatus = "normal" | "due";
 
 export type AttendanceType = "present" | "absent" | "makeup";
 
@@ -15,6 +15,7 @@ export interface Student {
   usedCount: number;
   packageSize: number;
   paymentStatus: PaymentStatus;
+  lastPaymentAt: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -69,7 +70,7 @@ export const STATUS_LABELS: Record<StudentStatus, string> = {
 };
 
 export const PAYMENT_LABELS: Record<PaymentStatus, string> = {
-  paid: "수납 완료",
+  normal: "수납 완료",
   due: "등록 안내 필요",
 };
 

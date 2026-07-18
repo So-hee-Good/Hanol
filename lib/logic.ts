@@ -35,7 +35,8 @@ export function createStudent(input: {
     status: "active",
     usedCount: 0,
     packageSize: SESSION_LIMIT,
-    paymentStatus: "paid",
+    paymentStatus: "normal",
+    lastPaymentAt: null,
     createdAt: ts,
     updatedAt: ts,
   };
@@ -103,22 +104,25 @@ export function completePayment(
   amount: number,
   note = ""
 ): { student: Student; payment: PaymentRecord } {
-  const nextStudent: Student = {
-    ...student,
-    usedCount: 0,
-    packageSize: SESSION_LIMIT,
-    paymentStatus: "paid",
-    status: student.status === "withdrawn" ? "withdrawn" : "active",
-    updatedAt: nowIso(),
-  };
+  const paidAt = nowIso();
 
   const payment: PaymentRecord = {
     id: newId("pay"),
     studentId: student.id,
     studentName: student.name,
     amount,
-    paidAt: nowIso(),
+    paidAt,
     note: note.trim(),
+  };
+
+  const nextStudent: Student = {
+    ...student,
+    usedCount: 0,
+    packageSize: SESSION_LIMIT,
+    paymentStatus: "normal",
+    lastPaymentAt: payment.paidAt,
+    status: student.status === "withdrawn" ? "withdrawn" : "active",
+    updatedAt: paidAt,
   };
 
   return { student: nextStudent, payment };

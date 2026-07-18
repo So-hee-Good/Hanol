@@ -31,10 +31,10 @@ npm run dev
 
 ## 비즈니스 규칙
 
-1. 신규 학생은 `packageSize=4`, `usedCount=0`, `paymentStatus=paid` 로 등록됩니다.
+1. 신규 학생은 `packageSize=4`, `usedCount=0`, `paymentStatus=normal` 로 등록됩니다.
 2. **출석·보강** 기록 시 `usedCount`가 1 증가합니다. (결석은 미차감)
 3. `usedCount >= packageSize` 이면 `paymentStatus`가 **due**(등록 안내 필요)로 바뀝니다.
-4. **수납 완료** 처리 시 `usedCount=0`, `paymentStatus=paid` 로 새 4회권이 시작됩니다.
+4. **수납 완료** 처리 시 `usedCount=0`, `paymentStatus=normal`, `lastPaymentAt` 갱신으로 새 4회권이 시작됩니다.
 5. 문자 발송은 API 연동 전 단계로, 대상·문구·이력을 localStorage에 저장합니다.
 
 ## 데이터
