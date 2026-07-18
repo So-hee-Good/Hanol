@@ -1,13 +1,13 @@
 "use client";
 
+/* Plain <a> is intentional: full page navigation is more reliable in
+   Cursor preview/port-forward environments than Next soft routing. */
+/* eslint-disable @next/next/no-html-link-for-pages */
+
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/cn";
 import { isNavActive, NAV_ITEMS } from "@/lib/nav";
 
-/**
- * Next.js Link(소프트 라우팅) 대신 일반 <a>를 사용합니다.
- * Cursor 미리보기/포트포워딩 환경에서 메뉴 클릭이 무시되는 문제를 피합니다.
- */
 export function Sidebar() {
   const pathname = usePathname();
 

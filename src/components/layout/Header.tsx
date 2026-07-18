@@ -1,5 +1,7 @@
 "use client";
 
+/* eslint-disable @next/next/no-html-link-for-pages */
+
 import { usePathname } from "next/navigation";
 import { Bell } from "lucide-react";
 import { MobileNav } from "@/components/layout/MobileNav";
