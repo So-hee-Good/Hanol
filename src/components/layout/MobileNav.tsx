@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Menu, X } from "lucide-react";
 import { cn } from "@/lib/cn";
@@ -32,15 +31,15 @@ export function MobileNav() {
           />
           <aside className="absolute inset-y-0 left-0 flex w-72 flex-col bg-white shadow-xl">
             <div className="flex h-16 items-center justify-between border-b border-slate-200 px-5">
-              <div className="flex items-center gap-3">
+              <a href="/" className="flex items-center gap-3">
                 <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-teal-700 text-sm font-bold text-white">
                   H
                 </div>
                 <div>
                   <p className="text-sm font-semibold text-slate-900">HANOL</p>
-                  <p className="text-xs text-slate-500">통합 관리자</p>
+                  <p className="text-xs text-slate-500">관리자</p>
                 </div>
-              </div>
+              </a>
               <button
                 type="button"
                 onClick={() => setOpen(false)}
@@ -57,10 +56,9 @@ export function MobileNav() {
                 const active = isNavActive(pathname, item.href);
 
                 return (
-                  <Link
+                  <a
                     key={item.href}
                     href={item.href}
-                    onClick={() => setOpen(false)}
                     className={cn(
                       "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors",
                       active
@@ -70,7 +68,7 @@ export function MobileNav() {
                   >
                     <Icon className="h-4 w-4" strokeWidth={1.75} />
                     {item.label}
-                  </Link>
+                  </a>
                 );
               })}
             </nav>
