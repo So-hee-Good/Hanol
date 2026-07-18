@@ -104,7 +104,7 @@ export default function StudentsPage() {
             <thead>
               <tr>
                 <th>이름</th>
-                <th>학년</th>
+                <th>학교 · 반</th>
                 <th>학부모</th>
                 <th>사용 / 패키지</th>
                 <th>상태</th>
@@ -125,7 +125,9 @@ export default function StudentsPage() {
                       <strong>{s.name}</strong>
                       <div className="muted">{s.phone || "-"}</div>
                     </td>
-                    <td>{s.grade || "-"}</td>
+                    <td>
+                      {s.school || "-"} · {s.className || s.grade || "-"}
+                    </td>
                     <td>{s.parentPhone || "-"}</td>
                     <td>
                       {s.usedCount}/{s.packageSize}

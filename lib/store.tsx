@@ -26,20 +26,34 @@ import type {
   StudentStatus,
 } from "./types";
 
+type StudentInput = {
+  name: string;
+  phone: string;
+  parentPhone: string;
+  school?: string;
+  className?: string;
+  grade?: string;
+  memo?: string;
+};
+
 interface StoreValue {
   ready: boolean;
   data: AppData;
-  addStudent: (input: {
-    name: string;
-    phone: string;
-    parentPhone: string;
-    grade: string;
-    memo?: string;
-  }) => void;
+  addStudent: (input: StudentInput) => void;
   editStudent: (
     id: string,
     patch: Partial<
-      Pick<Student, "name" | "phone" | "parentPhone" | "grade" | "memo" | "status">
+      Pick<
+        Student,
+        | "name"
+        | "phone"
+        | "parentPhone"
+        | "school"
+        | "className"
+        | "grade"
+        | "memo"
+        | "status"
+      >
     >
   ) => void;
   removeStudent: (id: string) => void;
@@ -66,7 +80,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     students: [],
     attendance: [],
     payments: [],
-    smsHistory: [],
+    messages: [],
   });
 
   useEffect(() => {
@@ -79,27 +93,28 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     saveData(data);
   }, [data, ready]);
 
-  const addStudent = useCallback(
-    (input: {
-      name: string;
-      phone: string;
-      parentPhone: string;
-      grade: string;
-      memo?: string;
-    }) => {
-      setData((prev) => ({
-        ...prev,
-        students: [createStudent(input), ...prev.students],
-      }));
-    },
-    []
-  );
+  const addStudent = useCallback((input: StudentInput) => {
+    setData((prev) => ({
+      ...prev,
+      students: [createStudent(input), ...prev.students],
+    }));
+  }, []);
 
   const editStudent = useCallback(
     (
       id: string,
       patch: Partial<
-        Pick<Student, "name" | "phone" | "parentPhone" | "grade" | "memo" | "status">
+        Pick<
+          Student,
+          | "name"
+          | "phone"
+          | "parentPhone"
+          | "school"
+          | "className"
+          | "grade"
+          | "memo"
+          | "status"
+        >
       >
     ) => {
       setData((prev) => ({
@@ -209,7 +224,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
       setData((prev) => ({
         ...prev,
-        smsHistory: [item, ...prev.smsHistory],
+        messages: [item, ...prev.messages],
       }));
 
       return item;

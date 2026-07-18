@@ -8,7 +8,8 @@ const menu = [
   { href: "/", label: "대시보드", icon: "대" },
   { href: "/students", label: "학생", icon: "학" },
   { href: "/attendance", label: "출결", icon: "출" },
-  { href: "/sms", label: "문자", icon: "문" },
+  { href: "/payments", label: "수납", icon: "수" },
+  { href: "/messages", label: "문자", icon: "문" },
 ];
 
 export function AppShell({ children }: { children: ReactNode }) {

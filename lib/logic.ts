@@ -1,7 +1,10 @@
 import {
+  ATTENDANCE_LABELS,
   SESSION_LIMIT,
   needsRenewal,
   remainingSessions,
+  type ActivityItem,
+  type AppData,
   type AttendanceRecord,
   type AttendanceType,
   type PaymentRecord,
@@ -21,16 +24,21 @@ export function createStudent(input: {
   name: string;
   phone: string;
   parentPhone: string;
-  grade: string;
+  school?: string;
+  className?: string;
+  grade?: string;
   memo?: string;
 }): Student {
   const ts = nowIso();
+  const className = (input.className ?? input.grade ?? "").trim();
   return {
     id: newId("stu"),
     name: input.name.trim(),
     phone: input.phone.trim(),
     parentPhone: input.parentPhone.trim(),
-    grade: input.grade.trim(),
+    school: (input.school ?? "").trim(),
+    className,
+    grade: (input.grade ?? className).trim(),
     memo: (input.memo ?? "").trim(),
     status: "active",
     usedCount: 0,
@@ -45,16 +53,30 @@ export function createStudent(input: {
 export function updateStudent(
   student: Student,
   patch: Partial<
-    Pick<Student, "name" | "phone" | "parentPhone" | "grade" | "memo" | "status">
+    Pick<
+      Student,
+      | "name"
+      | "phone"
+      | "parentPhone"
+      | "school"
+      | "className"
+      | "grade"
+      | "memo"
+      | "status"
+    >
   >
 ): Student {
+  const className = patch.className?.trim() ?? student.className;
+  const grade = patch.grade?.trim() ?? patch.className?.trim() ?? student.grade;
   return {
     ...student,
     ...patch,
     name: patch.name?.trim() ?? student.name,
     phone: patch.phone?.trim() ?? student.phone,
     parentPhone: patch.parentPhone?.trim() ?? student.parentPhone,
-    grade: patch.grade?.trim() ?? student.grade,
+    school: patch.school?.trim() ?? student.school,
+    className,
+    grade,
     memo: patch.memo?.trim() ?? student.memo,
     updatedAt: nowIso(),
   };
@@ -146,30 +168,35 @@ export function filterStudents(
       s.name.toLowerCase().includes(q) ||
       s.phone.includes(q) ||
       s.parentPhone.includes(q) ||
+      s.school.toLowerCase().includes(q) ||
+      s.className.toLowerCase().includes(q) ||
       s.grade.toLowerCase().includes(q)
     );
   });
 }
 
-export function dashboardStats(
-  students: Student[],
-  attendance: AttendanceRecord[]
-) {
-  const today = new Date().toISOString().slice(0, 10);
-  return {
-    total: students.length,
-    active: students.filter((s) => s.status === "active" && !needsRenewal(s))
-      .length,
-    renewalNeeded: students.filter((s) => needsRenewal(s)).length,
-    paused: students.filter((s) => s.status === "paused").length,
-    todayAttendance: attendance.filter((a) => a.date === today).length,
-    lowSessions: students.filter(
-      (s) =>
-        s.status === "active" &&
-        !needsRenewal(s) &&
-        remainingSessions(s) <= 1
-    ).length,
-  };
+export function recentActivity(data: AppData, limit = 8): ActivityItem[] {
+  const attendanceItems: ActivityItem[] = data.attendance.map((a) => ({
+    id: a.id,
+    title: `${a.studentName} ${ATTENDANCE_LABELS[a.type]}`,
+    description: a.counted
+      ? `${a.date} · 회차 반영${a.note ? ` · ${a.note}` : ""}`
+      : `${a.date} · 회차 미차감${a.note ? ` · ${a.note}` : ""}`,
+    date: a.createdAt,
+  }));
+
+  const paymentItems: ActivityItem[] = data.payments.map((p) => ({
+    id: p.id,
+    title: `${p.studentName} 수납 완료`,
+    description: `${p.amount.toLocaleString("ko-KR")}원 · 새 4회권 시작${
+      p.note ? ` · ${p.note}` : ""
+    }`,
+    date: p.paidAt,
+  }));
+
+  return [...attendanceItems, ...paymentItems]
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    .slice(0, limit);
 }
 
 export { remainingSessions, needsRenewal };

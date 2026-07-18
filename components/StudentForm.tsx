@@ -13,6 +13,8 @@ interface Props {
     name: string;
     phone: string;
     parentPhone: string;
+    school: string;
+    className: string;
     grade: string;
     memo: string;
     status?: StudentStatus;
@@ -24,7 +26,10 @@ export function StudentForm({ mode, initial, onSubmit, onCancel }: Props) {
   const [name, setName] = useState(initial?.name ?? "");
   const [phone, setPhone] = useState(initial?.phone ?? "");
   const [parentPhone, setParentPhone] = useState(initial?.parentPhone ?? "");
-  const [grade, setGrade] = useState(initial?.grade ?? "");
+  const [school, setSchool] = useState(initial?.school ?? "");
+  const [className, setClassName] = useState(
+    initial?.className || initial?.grade || ""
+  );
   const [memo, setMemo] = useState(initial?.memo ?? "");
   const [status, setStatus] = useState<StudentStatus>(
     initial?.status ?? "active"
@@ -37,7 +42,9 @@ export function StudentForm({ mode, initial, onSubmit, onCancel }: Props) {
       name,
       phone,
       parentPhone,
-      grade,
+      school,
+      className,
+      grade: className,
       memo,
       ...(mode === "edit" ? { status } : {}),
     });
@@ -71,10 +78,18 @@ export function StudentForm({ mode, initial, onSubmit, onCancel }: Props) {
         />
       </label>
       <label>
-        학년
+        학교
         <input
-          value={grade}
-          onChange={(e) => setGrade(e.target.value)}
+          value={school}
+          onChange={(e) => setSchool(e.target.value)}
+          placeholder="예: 위례초등학교"
+        />
+      </label>
+      <label>
+        반/학년
+        <input
+          value={className}
+          onChange={(e) => setClassName(e.target.value)}
           placeholder="예: 초3"
         />
       </label>

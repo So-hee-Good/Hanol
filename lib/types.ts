@@ -9,6 +9,8 @@ export interface Student {
   name: string;
   phone: string;
   parentPhone: string;
+  school: string;
+  className: string;
   grade: string;
   memo: string;
   status: StudentStatus;
@@ -56,11 +58,18 @@ export interface SmsHistoryItem {
   status: "queued";
 }
 
+export interface ActivityItem {
+  id: string;
+  title: string;
+  description: string;
+  date: string;
+}
+
 export interface AppData {
   students: Student[];
   attendance: AttendanceRecord[];
   payments: PaymentRecord[];
-  smsHistory: SmsHistoryItem[];
+  messages: SmsHistoryItem[];
 }
 
 export const STATUS_LABELS: Record<StudentStatus, string> = {

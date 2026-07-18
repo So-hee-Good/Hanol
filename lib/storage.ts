@@ -1,14 +1,14 @@
 import type { AppData } from "./types";
 import { createSeedData } from "./seed";
 
-export const STORAGE_KEY = "hanol-manager-sprint1-v3";
+export const STORAGE_KEY = "hanol-manager-sprint1-v4";
 
 export function emptyData(): AppData {
   return {
     students: [],
     attendance: [],
     payments: [],
-    smsHistory: [],
+    messages: [],
   };
 }
 
@@ -22,12 +22,14 @@ export function loadData(): AppData {
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify(seed));
       return seed;
     }
-    const parsed = JSON.parse(raw) as AppData;
+    const parsed = JSON.parse(raw) as AppData & {
+      smsHistory?: AppData["messages"];
+    };
     return {
       students: parsed.students ?? [],
       attendance: parsed.attendance ?? [],
       payments: parsed.payments ?? [],
-      smsHistory: parsed.smsHistory ?? [],
+      messages: parsed.messages ?? parsed.smsHistory ?? [],
     };
   } catch {
     return createSeedData();

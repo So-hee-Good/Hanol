@@ -1,8 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { StatusBadge } from "@/components/StatusBadge";
-import { dashboardStats, needsRenewal, remainingSessions } from "@/lib/logic";
+import {
+  needsRenewal,
+  recentActivity,
+  remainingSessions,
+} from "@/lib/logic";
 import { useStore } from "@/lib/store";
 
 export default function DashboardPage() {
@@ -12,108 +15,30 @@ export default function DashboardPage() {
     return <p className="muted">불러오는 중…</p>;
   }
 
-  const stats = dashboardStats(data.students, data.attendance);
-  const renewal = data.students.filter((s) => needsRenewal(s));
-  const recent = data.attendance.slice(0, 5);
+  const today = new Date().toISOString().slice(0, 10);
+  const due = data.students.filter((s) => needsRenewal(s));
+  const oneLeft = data.students.filter(
+    (s) =>
+      s.status === "active" &&
+      !needsRenewal(s) &&
+      remainingSessions(s) === 1
+  );
+  const todayAttendance = data.attendance.filter((a) => a.date === today);
+  const active = data.students.filter(
+    (s) => s.status === "active" && !needsRenewal(s)
+  );
+  const recent = recentActivity(data);
 
   return (
-    <>
+    <div>
       <section className="page-head">
-        <h1>운영 대시보드</h1>
-        <p>
-          학생·출결·4회권 차감·수납·문자 대상을 한곳에서 관리합니다. 데이터는
-          브라우저 localStorage에 저장됩니다.
-        </p>
-      </section>
-
-      <div className="stats">
-        <div className="stat">
-          <span className="label">전체 학생</span>
-          <span className="value">{stats.total}</span>
-        </div>
-        <div className="stat">
-          <span className="label">수강중</span>
-          <span className="value">{stats.active}</span>
-        </div>
-        <div className="stat">
-          <span className="label">등록 안내 필요</span>
-          <span className="value">{stats.renewalNeeded}</span>
-        </div>
-        <div className="stat">
-          <span className="label">오늘 출결</span>
-          <span className="value">{stats.todayAttendance}</span>
-        </div>
-        <div className="stat">
-          <span className="label">잔여 1회 이하</span>
-          <span className="value">{stats.lowSessions}</span>
-        </div>
-      </div>
-
-      <div className="two-col">
-        <section className="panel">
-          <div className="split-actions">
-            <h2>등록 안내가 필요한 학생</h2>
-            <Link href="/sms" className="btn sm accent">
-              문자 보내기
-            </Link>
-          </div>
-          {renewal.length === 0 ? (
-            <p className="empty">현재 대상 학생이 없습니다.</p>
-          ) : (
-            <ul className="list-plain">
-              {renewal.map((s) => (
-                <li key={s.id}>
-                  <div>
-                    <strong>{s.name}</strong>
-                    <div className="muted">
-                      {s.grade || "학년 미입력"} · 사용 {s.usedCount}/
-                      {s.packageSize} · 잔여 {remainingSessions(s)}회
-                    </div>
-                  </div>
-                  <StatusBadge student={s} />
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
-
-        <section className="panel">
-          <div className="split-actions">
-            <h2>최근 출결</h2>
-            <Link href="/attendance" className="btn sm ghost">
-              출결 입력
-            </Link>
-          </div>
-          {recent.length === 0 ? (
-            <p className="empty">출결 기록이 없습니다.</p>
-          ) : (
-            <ul className="list-plain">
-              {recent.map((a) => (
-                <li key={a.id}>
-                  <div>
-                    <strong>{a.studentName}</strong>
-                    <div className="muted">
-                      {a.date} ·{" "}
-                      {a.type === "present"
-                        ? "출석"
-                        : a.type === "absent"
-                          ? "결석"
-                          : "보강"}
-                      {a.counted ? " · 회차 차감" : ""}
-                    </div>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
-      </div>
-
-      <section className="panel" style={{ marginTop: "1rem" }}>
         <div className="split-actions">
           <div>
-            <h2>빠른 이동</h2>
-            <p className="muted">데이터는 이 브라우저의 localStorage에 저장됩니다.</p>
+            <h1>운영 대시보드</h1>
+            <p>
+              4회 출석 완료 시 등록 안내 대상이 자동으로 올라옵니다. 데이터는
+              이 브라우저에 저장됩니다.
+            </p>
           </div>
           <button
             type="button"
@@ -122,21 +47,97 @@ export default function DashboardPage() {
               if (confirm("샘플 데이터로 초기화할까요?")) resetAll();
             }}
           >
-            샘플 데이터 초기화
+            샘플 초기화
           </button>
         </div>
-        <div className="row-actions" style={{ marginTop: "0.75rem" }}>
-          <Link href="/students" className="btn primary">
-            학생 관리
-          </Link>
-          <Link href="/attendance" className="btn ghost">
-            출결 입력
-          </Link>
-          <Link href="/sms" className="btn ghost">
-            문자 대상
-          </Link>
+      </section>
+
+      <section className="stat-grid">
+        <Link href="/payments" className="stat-card danger">
+          <span className="stat-label">등록 안내</span>
+          <strong>{due.length}명</strong>
+          <small>4회 출석 완료</small>
+        </Link>
+        <Link href="/students" className="stat-card warning">
+          <span className="stat-label">잔여 1회</span>
+          <strong>{oneLeft.length}명</strong>
+          <small>다음 수업 전 안내 추천</small>
+        </Link>
+        <Link href="/attendance" className="stat-card info">
+          <span className="stat-label">오늘 출결</span>
+          <strong>{todayAttendance.length}건</strong>
+          <small>재원생 {active.length}명</small>
+        </Link>
+        <Link href="/messages" className="stat-card success">
+          <span className="stat-label">문자 기록</span>
+          <strong>{data.messages.length}건</strong>
+          <small>발송 준비·이력</small>
+        </Link>
+      </section>
+
+      <section className="dashboard-grid">
+        <div className="panel">
+          <div className="panel-header">
+            <div>
+              <h2>등록 안내 대상</h2>
+              <p>4회 수업을 모두 사용한 학생입니다.</p>
+            </div>
+            <Link href="/messages">문자 작성 →</Link>
+          </div>
+          <div className="simple-list">
+            {due.length === 0 ? (
+              <div className="empty">현재 등록 안내 대상이 없습니다.</div>
+            ) : (
+              due.map((student) => (
+                <div className="simple-row" key={student.id}>
+                  <div>
+                    <strong>{student.name}</strong>
+                    <span>
+                      {student.school || "학교 미입력"} ·{" "}
+                      {student.className || student.grade || "-"}
+                    </span>
+                  </div>
+                  <div className="ticket-mini danger-text">
+                    {student.usedCount}/{student.packageSize}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
+        <div className="panel">
+          <div className="panel-header">
+            <div>
+              <h2>최근 활동</h2>
+              <p>출결과 수납 변경 기록입니다.</p>
+            </div>
+          </div>
+          <div className="activity-list">
+            {recent.length === 0 ? (
+              <div className="empty">아직 활동 기록이 없습니다.</div>
+            ) : (
+              recent.map((item) => (
+                <div className="activity-item" key={item.id}>
+                  <span className="activity-dot" />
+                  <div>
+                    <strong>{item.title}</strong>
+                    <p>{item.description}</p>
+                  </div>
+                  <time>
+                    {new Date(item.date).toLocaleString("ko-KR", {
+                      month: "numeric",
+                      day: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </time>
+                </div>
+              ))
+            )}
+          </div>
         </div>
       </section>
-    </>
+    </div>
   );
 }
