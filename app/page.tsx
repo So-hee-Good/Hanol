@@ -19,10 +19,10 @@ export default function DashboardPage() {
   return (
     <>
       <section className="page-head">
-        <h1>HANOL Manager</h1>
+        <h1>운영 대시보드</h1>
         <p>
-          브라우저에 저장되는 Sprint 1 MVP입니다. 학생·출결·4회권 차감·수납·문자
-          대상을 한곳에서 관리합니다.
+          학생·출결·4회권 차감·수납·문자 대상을 한곳에서 관리합니다. 데이터는
+          브라우저 localStorage에 저장됩니다.
         </p>
       </section>
 

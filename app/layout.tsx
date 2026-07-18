@@ -11,9 +11,9 @@ const display = Fraunces({
 });
 
 export const metadata: Metadata = {
-  title: "HANOL Manager",
-  description: "HANOL 학원 관리 Sprint 1 MVP — 학생·출결·수납·문자",
-};
+  title: "한올국어학원 운영 관리",
+  description: "한올국어학원 Sprint 1 MVP — 학생·출결·수납·문자",
+}
 
 export default function RootLayout({
   children,
