@@ -121,19 +121,32 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const markAttendance = useCallback(
     (studentId: string, type: AttendanceType, date: string, note = "") => {
-      setData((prev) => {
-        const student = prev.students.find((s) => s.id === studentId);
-        if (!student) return prev;
-        const { student: next, record } = applyAttendance(
-          student,
-          type,
-          date,
-          note
-        );
+      setData((data) => {
+        const current = data.students.find((s) => s.id === studentId);
+        if (!current) return data;
+
+        const { record } = applyAttendance(current, type, date, note);
+        const counted = record.counted;
+
+        const students = data.students.map((student) => {
+          if (student.id !== studentId || !counted) return student;
+          const nextUsed = Math.min(
+            student.usedCount + 1,
+            student.packageSize
+          );
+          return {
+            ...student,
+            usedCount: nextUsed,
+            paymentStatus:
+              nextUsed >= student.packageSize ? "due" : student.paymentStatus,
+            updatedAt: record.createdAt,
+          };
+        });
+
         return {
-          ...prev,
-          students: prev.students.map((s) => (s.id === studentId ? next : s)),
-          attendance: [record, ...prev.attendance],
+          ...data,
+          students,
+          attendance: [record, ...data.attendance],
         };
       });
     },

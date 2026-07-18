@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { StatusBadge } from "@/components/StatusBadge";
-import { dashboardStats } from "@/lib/logic";
+import { dashboardStats, needsRenewal, remainingSessions } from "@/lib/logic";
 import { useStore } from "@/lib/store";
 
 export default function DashboardPage() {
@@ -13,7 +13,7 @@ export default function DashboardPage() {
   }
 
   const stats = dashboardStats(data.students, data.attendance);
-  const renewal = data.students.filter((s) => s.status === "renewal_needed");
+  const renewal = data.students.filter((s) => needsRenewal(s));
   const recent = data.attendance.slice(0, 5);
 
   return (
@@ -66,10 +66,11 @@ export default function DashboardPage() {
                   <div>
                     <strong>{s.name}</strong>
                     <div className="muted">
-                      {s.grade || "학년 미입력"} · 잔여 {s.remainingSessions}회
+                      {s.grade || "학년 미입력"} · 사용 {s.usedCount}/
+                      {s.packageSize} · 잔여 {remainingSessions(s)}회
                     </div>
                   </div>
-                  <StatusBadge status={s.status} />
+                  <StatusBadge student={s} />
                 </li>
               ))}
             </ul>
@@ -98,7 +99,7 @@ export default function DashboardPage() {
                         : a.type === "absent"
                           ? "결석"
                           : "보강"}
-                      {a.deducted ? " · 회차 차감" : ""}
+                      {a.counted ? " · 회차 차감" : ""}
                     </div>
                   </div>
                 </li>

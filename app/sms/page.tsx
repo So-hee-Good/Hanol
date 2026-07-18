@@ -3,31 +3,25 @@
 import { useMemo, useState } from "react";
 import { StatusBadge } from "@/components/StatusBadge";
 import { getTemplate, renderSmsBody, SMS_TEMPLATES } from "@/lib/sms";
+import { filterStudents, remainingSessions, type StudentListFilter } from "@/lib/logic";
 import { useStore } from "@/lib/store";
-import {
-  STATUS_LABELS,
-  type SmsTemplateKey,
-  type StudentStatus,
-} from "@/lib/types";
+import { STATUS_LABELS, type SmsTemplateKey, type StudentStatus } from "@/lib/types";
 
 export default function SmsPage() {
   const { ready, data, sendSms } = useStore();
-  const [filter, setFilter] = useState<StudentStatus | "all">("renewal_needed");
+  const [filter, setFilter] = useState<StudentListFilter>("renewal_needed");
   const [templateKey, setTemplateKey] = useState<SmsTemplateKey>("renewal");
-  const [customBody, setCustomBody] = useState(
-    getTemplate("renewal").body
-  );
+  const [customBody, setCustomBody] = useState(getTemplate("renewal").body);
   const [selected, setSelected] = useState<string[]>([]);
   const [message, setMessage] = useState("");
 
-  const candidates = useMemo(() => {
-    if (filter === "all") return data.students;
-    return data.students.filter((s) => s.status === filter);
-  }, [data.students, filter]);
+  const candidates = useMemo(
+    () => filterStudents(data.students, "", filter),
+    [data.students, filter]
+  );
 
-  const previewStudent = candidates.find((s) => selected.includes(s.id))
-    ?? candidates[0]
-    ?? null;
+  const previewStudent =
+    candidates.find((s) => selected.includes(s.id)) ?? candidates[0] ?? null;
 
   const preview = previewStudent
     ? renderSmsBody(customBody, previewStudent)
@@ -62,11 +56,12 @@ export default function SmsPage() {
             <select
               value={filter}
               onChange={(e) => {
-                setFilter(e.target.value as StudentStatus | "all");
+                setFilter(e.target.value as StudentListFilter);
                 setSelected([]);
               }}
             >
               <option value="all">전체 학생</option>
+              <option value="renewal_needed">등록 안내 필요</option>
               {(Object.keys(STATUS_LABELS) as StudentStatus[]).map((key) => (
                 <option key={key} value={key}>
                   {STATUS_LABELS[key]}
@@ -99,10 +94,11 @@ export default function SmsPage() {
                   <span>
                     <strong>{s.name}</strong>
                     <div className="muted">
-                      {s.parentPhone || s.phone || "연락처 없음"} · 잔여{" "}
-                      {s.remainingSessions}회
+                      {s.parentPhone || s.phone || "연락처 없음"} ·{" "}
+                      {s.usedCount}/{s.packageSize} · 잔여{" "}
+                      {remainingSessions(s)}회
                     </div>
-                    <StatusBadge status={s.status} />
+                    <StatusBadge student={s} />
                   </span>
                 </label>
               ))}
@@ -155,8 +151,8 @@ export default function SmsPage() {
               />
             </label>
             <p className="muted">
-              변수: {"{학생이름}"}, {"{남은회차}"}, {"{학년}"} · 미리보기는 첫
-              선택 학생 기준
+              변수: {"{학생이름}"}, {"{남은회차}"}, {"{사용회차}"}, {"{패키지}"},{" "}
+              {"{학년}"} · 미리보기는 첫 선택 학생 기준
             </p>
             <div className="preview-box">{preview}</div>
             <button type="submit" className="btn primary">

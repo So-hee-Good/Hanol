@@ -2,11 +2,9 @@
 
 import { useMemo, useState } from "react";
 import { StatusBadge } from "@/components/StatusBadge";
+import { remainingSessions } from "@/lib/logic";
 import { useStore } from "@/lib/store";
-import {
-  ATTENDANCE_LABELS,
-  type AttendanceType,
-} from "@/lib/types";
+import { ATTENDANCE_LABELS, type AttendanceType } from "@/lib/types";
 
 function todayStr(): string {
   return new Date().toISOString().slice(0, 10);
@@ -34,7 +32,7 @@ export default function AttendancePage() {
       <section className="page-head">
         <h1>출결 입력</h1>
         <p>
-          출석·보강 시 4회권이 자동 차감됩니다. 잔여 0회가 되면 상태가{" "}
+          출석·보강 시 사용 회차가 증가합니다. 패키지를 모두 쓰면 상태가{" "}
           <strong>등록 안내 필요</strong>로 바뀝니다.
         </p>
       </section>
@@ -53,15 +51,22 @@ export default function AttendancePage() {
               const before = data.students.find((s) => s.id === studentId);
               markAttendance(studentId, type, date, note);
               const afterName = before?.name ?? "학생";
-              const willDeduct =
+              const willCount =
                 (type === "present" || type === "makeup") &&
-                (before?.remainingSessions ?? 0) > 0;
-              const nextRemaining = willDeduct
-                ? Math.max(0, (before?.remainingSessions ?? 0) - 1)
-                : (before?.remainingSessions ?? 0);
+                (before?.usedCount ?? 0) < (before?.packageSize ?? 0);
+              const nextUsed = willCount
+                ? Math.min(
+                    (before?.usedCount ?? 0) + 1,
+                    before?.packageSize ?? 0
+                  )
+                : (before?.usedCount ?? 0);
+              const nextRemaining = Math.max(
+                0,
+                (before?.packageSize ?? 0) - nextUsed
+              );
               setMessage(
-                willDeduct
-                  ? `${afterName} ${ATTENDANCE_LABELS[type]} 처리 · 잔여 ${nextRemaining}회${
+                willCount
+                  ? `${afterName} ${ATTENDANCE_LABELS[type]} 처리 · 사용 ${nextUsed}/${before?.packageSize} · 잔여 ${nextRemaining}회${
                       nextRemaining === 0 ? " · 등록 안내 필요로 전환" : ""
                     }`
                   : `${afterName} ${ATTENDANCE_LABELS[type]} 기록 (회차 미차감)`
@@ -79,8 +84,9 @@ export default function AttendancePage() {
                 <option value="">학생 선택</option>
                 {selectable.map((s) => (
                   <option key={s.id} value={s.id}>
-                    {s.name} · 잔여 {s.remainingSessions}회 ·{" "}
-                    {s.status === "renewal_needed"
+                    {s.name} · {s.usedCount}/{s.packageSize} · 잔여{" "}
+                    {remainingSessions(s)}회 ·{" "}
+                    {s.paymentStatus === "due"
                       ? "등록 안내 필요"
                       : s.status === "paused"
                         ? "휴원"
@@ -123,8 +129,9 @@ export default function AttendancePage() {
             </label>
             {selected && (
               <p className="muted">
-                현재: 잔여 {selected.remainingSessions}회 ·{" "}
-                <StatusBadge status={selected.status} />
+                현재: 사용 {selected.usedCount}/{selected.packageSize} · 잔여{" "}
+                {remainingSessions(selected)}회 ·{" "}
+                <StatusBadge student={selected} />
               </p>
             )}
             <button type="submit" className="btn primary">
@@ -155,7 +162,7 @@ export default function AttendancePage() {
                       <td>{a.date}</td>
                       <td>{a.studentName}</td>
                       <td>{ATTENDANCE_LABELS[a.type]}</td>
-                      <td>{a.deducted ? "회차 -1" : "-"}</td>
+                      <td>{a.counted ? "회차 +1" : "-"}</td>
                     </tr>
                   ))}
                 </tbody>

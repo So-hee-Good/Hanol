@@ -1,8 +1,6 @@
-export type StudentStatus =
-  | "active"
-  | "renewal_needed"
-  | "paused"
-  | "withdrawn";
+export type StudentStatus = "active" | "paused" | "withdrawn";
+
+export type PaymentStatus = "paid" | "due";
 
 export type AttendanceType = "present" | "absent" | "makeup";
 
@@ -14,8 +12,9 @@ export interface Student {
   grade: string;
   memo: string;
   status: StudentStatus;
-  remainingSessions: number;
-  totalSessions: number;
+  usedCount: number;
+  packageSize: number;
+  paymentStatus: PaymentStatus;
   createdAt: string;
   updatedAt: string;
 }
@@ -26,7 +25,7 @@ export interface AttendanceRecord {
   studentName: string;
   date: string;
   type: AttendanceType;
-  deducted: boolean;
+  counted: boolean;
   note: string;
   createdAt: string;
 }
@@ -65,9 +64,13 @@ export interface AppData {
 
 export const STATUS_LABELS: Record<StudentStatus, string> = {
   active: "수강중",
-  renewal_needed: "등록 안내 필요",
   paused: "휴원",
   withdrawn: "퇴원",
+};
+
+export const PAYMENT_LABELS: Record<PaymentStatus, string> = {
+  paid: "수납 완료",
+  due: "등록 안내 필요",
 };
 
 export const ATTENDANCE_LABELS: Record<AttendanceType, string> = {
@@ -77,3 +80,13 @@ export const ATTENDANCE_LABELS: Record<AttendanceType, string> = {
 };
 
 export const SESSION_LIMIT = 4;
+
+export function remainingSessions(student: Student): number {
+  return Math.max(0, student.packageSize - student.usedCount);
+}
+
+export function needsRenewal(student: Student): boolean {
+  return (
+    student.paymentStatus === "due" || student.usedCount >= student.packageSize
+  );
+}

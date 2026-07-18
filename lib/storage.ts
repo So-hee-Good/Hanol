@@ -1,7 +1,7 @@
 import type { AppData } from "./types";
 import { createSeedData } from "./seed";
 
-export const STORAGE_KEY = "hanol-manager-sprint1";
+export const STORAGE_KEY = "hanol-manager-sprint1-v2";
 
 export function emptyData(): AppData {
   return {

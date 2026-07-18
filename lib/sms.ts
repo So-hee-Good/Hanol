@@ -1,4 +1,8 @@
-import type { SmsTemplateKey, Student } from "./types";
+import {
+  remainingSessions,
+  type SmsTemplateKey,
+  type Student,
+} from "./types";
 
 export interface SmsTemplate {
   key: SmsTemplateKey;
@@ -37,7 +41,9 @@ export const SMS_TEMPLATES: SmsTemplate[] = [
 export function renderSmsBody(template: string, student: Student): string {
   return template
     .replaceAll("{학생이름}", student.name)
-    .replaceAll("{남은회차}", String(student.remainingSessions))
+    .replaceAll("{남은회차}", String(remainingSessions(student)))
+    .replaceAll("{사용회차}", String(student.usedCount))
+    .replaceAll("{패키지}", String(student.packageSize))
     .replaceAll("{학년}", student.grade || "-");
 }
 

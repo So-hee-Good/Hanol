@@ -3,19 +3,19 @@
 import { useMemo, useState } from "react";
 import { StatusBadge } from "@/components/StatusBadge";
 import { StudentForm } from "@/components/StudentForm";
-import { filterStudents } from "@/lib/logic";
-import { useStore } from "@/lib/store";
 import {
-  STATUS_LABELS,
-  type Student,
-  type StudentStatus,
-} from "@/lib/types";
+  filterStudents,
+  remainingSessions,
+  type StudentListFilter,
+} from "@/lib/logic";
+import { useStore } from "@/lib/store";
+import { STATUS_LABELS, type Student, type StudentStatus } from "@/lib/types";
 
 export default function StudentsPage() {
   const { ready, data, addStudent, editStudent, removeStudent, markPayment } =
     useStore();
   const [query, setQuery] = useState("");
-  const [status, setStatus] = useState<StudentStatus | "all">("all");
+  const [status, setStatus] = useState<StudentListFilter>("all");
   const [editing, setEditing] = useState<Student | null>(null);
   const [showCreate, setShowCreate] = useState(false);
   const [message, setMessage] = useState("");
@@ -71,9 +71,10 @@ export default function StudentsPage() {
           />
           <select
             value={status}
-            onChange={(e) => setStatus(e.target.value as StudentStatus | "all")}
+            onChange={(e) => setStatus(e.target.value as StudentListFilter)}
           >
             <option value="all">전체 상태</option>
+            <option value="renewal_needed">등록 안내 필요</option>
             {(Object.keys(STATUS_LABELS) as StudentStatus[]).map((key) => (
               <option key={key} value={key}>
                 {STATUS_LABELS[key]}
@@ -105,7 +106,7 @@ export default function StudentsPage() {
                 <th>이름</th>
                 <th>학년</th>
                 <th>학부모</th>
-                <th>잔여 회차</th>
+                <th>사용 / 패키지</th>
                 <th>상태</th>
                 <th>작업</th>
               </tr>
@@ -127,10 +128,11 @@ export default function StudentsPage() {
                     <td>{s.grade || "-"}</td>
                     <td>{s.parentPhone || "-"}</td>
                     <td>
-                      {s.remainingSessions}/{s.totalSessions}
+                      {s.usedCount}/{s.packageSize}
+                      <div className="muted">잔여 {remainingSessions(s)}회</div>
                     </td>
                     <td>
-                      <StatusBadge status={s.status} />
+                      <StatusBadge student={s} />
                     </td>
                     <td>
                       <div className="row-actions">

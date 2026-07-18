@@ -1,5 +1,7 @@
 import {
   SESSION_LIMIT,
+  needsRenewal,
+  remainingSessions,
   type AttendanceRecord,
   type AttendanceType,
   type PaymentRecord,
@@ -31,8 +33,9 @@ export function createStudent(input: {
     grade: input.grade.trim(),
     memo: (input.memo ?? "").trim(),
     status: "active",
-    remainingSessions: SESSION_LIMIT,
-    totalSessions: SESSION_LIMIT,
+    usedCount: 0,
+    packageSize: SESSION_LIMIT,
+    paymentStatus: "paid",
     createdAt: ts,
     updatedAt: ts,
   };
@@ -56,34 +59,29 @@ export function updateStudent(
   };
 }
 
-/** 출석/보강 시 4회권 차감. 0회가 되면 등록 안내 필요로 전환 */
+/** 출석/보강 시 usedCount 증가. packageSize 도달 시 paymentStatus = due */
 export function applyAttendance(
   student: Student,
   type: AttendanceType,
   date: string,
   note = ""
 ): { student: Student; record: AttendanceRecord } {
-  const shouldDeduct =
+  const counted =
     (type === "present" || type === "makeup") &&
     student.status !== "withdrawn" &&
-    student.remainingSessions > 0;
+    student.usedCount < student.packageSize;
 
-  let remaining = student.remainingSessions;
-  let status: StudentStatus = student.status;
-
-  if (shouldDeduct) {
-    remaining = Math.max(0, remaining - 1);
-    if (remaining === 0 && status === "active") {
-      status = "renewal_needed";
-    }
+  let next = student;
+  if (counted) {
+    const nextUsed = Math.min(student.usedCount + 1, student.packageSize);
+    next = {
+      ...student,
+      usedCount: nextUsed,
+      paymentStatus:
+        nextUsed >= student.packageSize ? "due" : student.paymentStatus,
+      updatedAt: nowIso(),
+    };
   }
-
-  const nextStudent: Student = {
-    ...student,
-    remainingSessions: remaining,
-    status,
-    updatedAt: nowIso(),
-  };
 
   const record: AttendanceRecord = {
     id: newId("att"),
@@ -91,12 +89,12 @@ export function applyAttendance(
     studentName: student.name,
     date,
     type,
-    deducted: shouldDeduct,
+    counted,
     note: note.trim(),
     createdAt: nowIso(),
   };
 
-  return { student: nextStudent, record };
+  return { student: next, record };
 }
 
 /** 수납 완료 후 새 4회권 자동 시작 */
@@ -107,8 +105,9 @@ export function completePayment(
 ): { student: Student; payment: PaymentRecord } {
   const nextStudent: Student = {
     ...student,
-    remainingSessions: SESSION_LIMIT,
-    totalSessions: SESSION_LIMIT,
+    usedCount: 0,
+    packageSize: SESSION_LIMIT,
+    paymentStatus: "paid",
     status: student.status === "withdrawn" ? "withdrawn" : "active",
     updatedAt: nowIso(),
   };
@@ -125,14 +124,18 @@ export function completePayment(
   return { student: nextStudent, payment };
 }
 
+export type StudentListFilter = StudentStatus | "renewal_needed" | "all";
+
 export function filterStudents(
   students: Student[],
   query: string,
-  status: StudentStatus | "all"
+  status: StudentListFilter
 ): Student[] {
   const q = query.trim().toLowerCase();
   return students.filter((s) => {
-    const statusOk = status === "all" || s.status === status;
+    const statusOk =
+      status === "all" ||
+      (status === "renewal_needed" ? needsRenewal(s) : s.status === status);
     if (!statusOk) return false;
     if (!q) return true;
     return (
@@ -144,16 +147,25 @@ export function filterStudents(
   });
 }
 
-export function dashboardStats(students: Student[], attendance: AttendanceRecord[]) {
+export function dashboardStats(
+  students: Student[],
+  attendance: AttendanceRecord[]
+) {
   const today = new Date().toISOString().slice(0, 10);
   return {
     total: students.length,
-    active: students.filter((s) => s.status === "active").length,
-    renewalNeeded: students.filter((s) => s.status === "renewal_needed").length,
+    active: students.filter((s) => s.status === "active" && !needsRenewal(s))
+      .length,
+    renewalNeeded: students.filter((s) => needsRenewal(s)).length,
     paused: students.filter((s) => s.status === "paused").length,
     todayAttendance: attendance.filter((a) => a.date === today).length,
     lowSessions: students.filter(
-      (s) => s.status === "active" && s.remainingSessions <= 1
+      (s) =>
+        s.status === "active" &&
+        !needsRenewal(s) &&
+        remainingSessions(s) <= 1
     ).length,
   };
 }
+
+export { remainingSessions, needsRenewal };
