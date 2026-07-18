@@ -184,6 +184,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       const student = data.students.find((s) => s.id === input.studentId);
       if (!student) return null;
 
+      const now = new Date().toISOString();
       const item: MessageRecord = {
         id: `msg_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`,
         studentId: input.studentId,
@@ -192,7 +193,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         phone: input.phone.trim(),
         body: input.body.trim(),
         status: input.status ?? "prepared",
-        createdAt: new Date().toISOString(),
+        sentAt: now,
+        createdAt: now,
       };
 
       setData((prev) => ({

@@ -1,44 +1,35 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { StatusBadge } from "@/components/StatusBadge";
-import { getTemplate, renderSmsBody, SMS_TEMPLATES } from "@/lib/sms";
-import {
-  filterStudents,
-  remainingSessions,
-  type StudentListFilter,
-} from "@/lib/logic";
+import { getTemplate, renderSmsBody, templates } from "@/lib/sms";
+import { filterStudents, type StudentListFilter } from "@/lib/logic";
 import { useStore } from "@/lib/store";
 import type { MessageRecipient, SmsTemplateKey } from "@/lib/types";
 
 export default function MessagesPage() {
   const { ready, data, saveMessage } = useStore();
   const [filter, setFilter] = useState<StudentListFilter>("due");
-  const [templateKey, setTemplateKey] = useState<SmsTemplateKey>("renewal");
-  const [customBody, setCustomBody] = useState(getTemplate("renewal").body);
+  const [templateKey, setTemplateKey] = useState<SmsTemplateKey>("payment");
   const [recipient, setRecipient] = useState<MessageRecipient>("parent");
   const [selected, setSelected] = useState<string[]>([]);
 
-  const candidates = useMemo(
+  const targets = useMemo(
     () => filterStudents(data.students, "", filter),
     [data.students, filter]
   );
 
-  const previewStudent =
-    candidates.find((s) => selected.includes(s.id)) ?? candidates[0] ?? null;
-
-  const preview = previewStudent
-    ? renderSmsBody(customBody, previewStudent)
-    : customBody;
-
   function renderBody(studentId: string): string {
     const student = data.students.find((s) => s.id === studentId);
-    if (!student) return customBody;
-    return renderSmsBody(customBody, student);
+    if (!student) return templates[templateKey];
+    return renderSmsBody(getTemplate(templateKey), student);
   }
 
-  function refresh() {
-    setSelected([]);
+  function toggleAll() {
+    if (targets.length > 0 && selected.length === targets.length) {
+      setSelected([]);
+      return;
+    }
+    setSelected(targets.map((s) => s.id));
   }
 
   function prepareMessages() {
@@ -60,7 +51,7 @@ export default function MessagesPage() {
         status: "prepared",
       });
     });
-    refresh();
+    setSelected([]);
     alert(
       `${selected.length}건의 문자를 발송 준비 목록에 저장했습니다.\n실제 SMS API 연동은 다음 Sprint에서 진행합니다.`
     );
@@ -68,173 +59,154 @@ export default function MessagesPage() {
 
   if (!ready) return <p className="muted">불러오는 중…</p>;
 
-  function toggle(id: string) {
-    setSelected((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
-    );
-  }
-
-  function selectAll() {
-    setSelected(candidates.map((s) => s.id));
-  }
-
   return (
     <div>
       <section className="page-head">
         <h1>문자 발송</h1>
         <p>
           조건별 대상을 고르고 템플릿을 미리본 뒤 발송 준비 목록에 저장합니다.
-          (실제 SMS API 연동 전 단계)
         </p>
       </section>
 
-      <div className="two-col">
+      <div className="message-layout">
         <section className="panel">
-          <h2>대상 선택</h2>
-          <div className="toolbar">
-            <select
-              value={filter}
-              onChange={(e) => {
-                setFilter(e.target.value as StudentListFilter);
-                setSelected([]);
-              }}
-            >
-              <option value="all">전체 학생</option>
-              <option value="due">등록 안내 필요</option>
-              <option value="one">잔여 1회</option>
-              <option value="active">재원생</option>
-              <option value="paused">휴원</option>
-            </select>
-            <button type="button" className="btn ghost sm" onClick={selectAll}>
-              전체 선택
-            </button>
-            <button
-              type="button"
-              className="btn ghost sm"
-              onClick={() => setSelected([])}
-            >
-              선택 해제
-            </button>
-          </div>
-
-          {candidates.length === 0 ? (
-            <p className="empty">해당 조건의 학생이 없습니다.</p>
-          ) : (
-            <div className="check-list">
-              {candidates.map((s) => (
-                <label key={s.id} className="check-item">
-                  <input
-                    type="checkbox"
-                    checked={selected.includes(s.id)}
-                    onChange={() => toggle(s.id)}
-                  />
-                  <span>
-                    <strong>{s.name}</strong>
-                    <div className="muted">
-                      학부모 {s.parentPhone || "-"} · 학생{" "}
-                      {s.studentPhone || "-"} · 잔여 {remainingSessions(s)}회
-                    </div>
-                    <StatusBadge student={s} />
-                  </span>
-                </label>
-              ))}
-            </div>
-          )}
-        </section>
-
-        <section className="panel">
-          <h2>템플릿 · 미리보기</h2>
-          <div className="inline-form">
+          <div className="message-controls">
+            <label>
+              대상 조건
+              <select
+                value={filter}
+                onChange={(e) => {
+                  setFilter(e.target.value as StudentListFilter);
+                  setSelected([]);
+                }}
+              >
+                <option value="due">4회 완료 · 등록 안내</option>
+                <option value="one">잔여 1회</option>
+                <option value="active">전체 재원생</option>
+                <option value="all">전체 학생</option>
+              </select>
+            </label>
             <label>
               수신자
               <select
                 value={recipient}
                 onChange={(e) =>
-                  setRecipient(e.target.value as MessageRecipient)
+                  setRecipient(e.target.value as "parent" | "student")
                 }
               >
                 <option value="parent">학부모</option>
                 <option value="student">학생</option>
               </select>
             </label>
+          </div>
+
+          <div className="selection-header">
             <label>
-              템플릿
-              <select
-                value={templateKey}
-                onChange={(e) => {
-                  const key = e.target.value as SmsTemplateKey;
-                  setTemplateKey(key);
-                  setCustomBody(getTemplate(key).body);
-                }}
-              >
-                {SMS_TEMPLATES.map((t) => (
-                  <option key={t.key} value={t.key}>
-                    {t.label} — {t.description}
-                  </option>
-                ))}
-              </select>
+              <input
+                type="checkbox"
+                checked={
+                  targets.length > 0 && selected.length === targets.length
+                }
+                onChange={toggleAll}
+              />{" "}
+              전체 선택
             </label>
-            <label>
-              문구 편집
-              <textarea
-                rows={5}
-                value={customBody}
-                onChange={(e) => setCustomBody(e.target.value)}
-              />
-            </label>
-            <p className="muted">
-              변수: {"{학생이름}"}, {"{남은회차}"}, {"{사용회차}"}, {"{패키지}"},{" "}
-              {"{학년}"} · 미리보기는 첫 선택 학생 기준
-            </p>
-            <div className="preview-box">{preview}</div>
-            <button
-              type="button"
-              className="btn primary"
-              onClick={prepareMessages}
+            <span>{selected.length}명 선택</span>
+          </div>
+
+          <div className="recipient-list">
+            {targets.map((student) => (
+              <label className="recipient-item" key={student.id}>
+                <input
+                  type="checkbox"
+                  checked={selected.includes(student.id)}
+                  onChange={() =>
+                    setSelected((prev) =>
+                      prev.includes(student.id)
+                        ? prev.filter((id) => id !== student.id)
+                        : [...prev, student.id]
+                    )
+                  }
+                />
+                <div>
+                  <strong>{student.name}</strong>
+                  <span>
+                    {student.school || "-"} · {student.className || "-"}
+                  </span>
+                </div>
+                <small>
+                  {recipient === "parent"
+                    ? student.parentPhone || "-"
+                    : student.studentPhone || "-"}
+                </small>
+              </label>
+            ))}
+            {targets.length === 0 && (
+              <div className="empty">조건에 맞는 대상이 없습니다.</div>
+            )}
+          </div>
+        </section>
+
+        <section className="panel">
+          <div className="panel-header">
+            <div>
+              <h2>문자 작성</h2>
+              <p>학생별 변수는 자동 치환됩니다.</p>
+            </div>
+          </div>
+
+          <label className="block-label">
+            템플릿
+            <select
+              value={templateKey}
+              onChange={(e) =>
+                setTemplateKey(e.target.value as keyof typeof templates)
+              }
             >
-              발송 준비 저장 ({selected.length}명)
-            </button>
+              <option value="payment">4회 완료 등록 안내</option>
+              <option value="oneLeft">잔여 1회 사전 안내</option>
+              <option value="absence">결석 안내</option>
+            </select>
+          </label>
+
+          <div className="message-preview">
+            <strong>미리보기</strong>
+            <p>
+              {selected[0] ? renderBody(selected[0]) : templates[templateKey]}
+            </p>
+          </div>
+
+          <button
+            type="button"
+            className="primary-button full-width"
+            onClick={prepareMessages}
+          >
+            선택 대상 문자 준비
+          </button>
+
+          <div className="prepared-log">
+            <h3>최근 준비 이력</h3>
+            {data.messages.length === 0 ? (
+              <div className="empty">아직 준비된 문자가 없습니다.</div>
+            ) : (
+              data.messages.slice(0, 5).map((message) => {
+                const student = data.students.find(
+                  (s) => s.id === message.studentId
+                );
+                return (
+                  <div key={message.id}>
+                    <strong>{student?.name ?? message.studentName}</strong>
+                    <span>{message.phone || "-"}</span>
+                    <small>
+                      {new Date(message.sentAt).toLocaleString("ko-KR")}
+                    </small>
+                  </div>
+                );
+              })
+            )}
           </div>
         </section>
       </div>
-
-      <section className="panel" style={{ marginTop: "1rem" }}>
-        <h2>발송 준비 목록</h2>
-        {data.messages.length === 0 ? (
-          <p className="empty">저장된 발송 준비 이력이 없습니다.</p>
-        ) : (
-          <div className="table-wrap">
-            <table className="data">
-              <thead>
-                <tr>
-                  <th>일시</th>
-                  <th>학생</th>
-                  <th>수신</th>
-                  <th>연락처</th>
-                  <th>미리보기</th>
-                  <th>상태</th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.messages.map((item) => (
-                  <tr key={item.id}>
-                    <td>
-                      {new Date(item.createdAt).toLocaleString("ko-KR")}
-                    </td>
-                    <td>{item.studentName}</td>
-                    <td>{item.recipient === "parent" ? "학부모" : "학생"}</td>
-                    <td>{item.phone || "-"}</td>
-                    <td style={{ maxWidth: 280 }}>{item.body}</td>
-                    <td>
-                      <span className="badge success">발송 준비</span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </section>
     </div>
   );
 }

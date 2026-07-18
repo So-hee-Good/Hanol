@@ -52,11 +52,7 @@ export interface PaymentRecord {
   note: string;
 }
 
-export type SmsTemplateKey =
-  | "renewal"
-  | "attendance"
-  | "absent"
-  | "custom";
+export type SmsTemplateKey = "payment" | "oneLeft" | "absence";
 
 export type MessageRecipient = "parent" | "student";
 
@@ -70,6 +66,7 @@ export interface MessageRecord {
   phone: string;
   body: string;
   status: MessageStatus;
+  sentAt: string;
   createdAt: string;
 }
 
@@ -87,7 +84,7 @@ export interface AppData {
   students: Student[];
   attendance: AttendanceRecord[];
   payments: PaymentRecord[];
-  messages: SmsHistoryItem[];
+  messages: MessageRecord[];
 }
 
 export const STATUS_LABELS: Record<StudentStatus, string> = {
