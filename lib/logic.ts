@@ -80,36 +80,54 @@ export function updateStudent(
   };
 }
 
+export function wouldCountAttendance(
+  student: Student,
+  status: AttendanceType
+): boolean {
+  return (
+    (status === "present" || status === "makeup") &&
+    student.status !== "withdrawn" &&
+    student.usedCount < student.packageSize
+  );
+}
+
+export function applyTicketDelta(
+  student: Student,
+  delta: number
+): Student {
+  const usedCount = Math.min(
+    student.packageSize,
+    Math.max(0, student.usedCount + delta)
+  );
+  return {
+    ...student,
+    usedCount,
+    paymentStatus:
+      usedCount >= student.packageSize
+        ? "due"
+        : usedCount < student.packageSize && student.paymentStatus === "due"
+          ? "normal"
+          : student.paymentStatus,
+    updatedAt: nowIso(),
+  };
+}
+
 /** 출석/보강 시 usedCount 증가. packageSize 도달 시 paymentStatus = due */
 export function applyAttendance(
   student: Student,
-  type: AttendanceType,
+  status: AttendanceType,
   date: string,
   note = ""
 ): { student: Student; record: AttendanceRecord } {
-  const counted =
-    (type === "present" || type === "makeup") &&
-    student.status !== "withdrawn" &&
-    student.usedCount < student.packageSize;
-
-  let next = student;
-  if (counted) {
-    const nextUsed = Math.min(student.usedCount + 1, student.packageSize);
-    next = {
-      ...student,
-      usedCount: nextUsed,
-      paymentStatus:
-        nextUsed >= student.packageSize ? "due" : student.paymentStatus,
-      updatedAt: nowIso(),
-    };
-  }
+  const counted = wouldCountAttendance(student, status);
+  const next = counted ? applyTicketDelta(student, 1) : student;
 
   const record: AttendanceRecord = {
     id: newId("att"),
     studentId: student.id,
     studentName: student.name,
     date,
-    type,
+    status,
     counted,
     note: note.trim(),
     createdAt: nowIso(),
@@ -182,7 +200,7 @@ export function filterStudents(
 export function recentActivity(data: AppData, limit = 8): ActivityItem[] {
   const attendanceItems: ActivityItem[] = data.attendance.map((a) => ({
     id: a.id,
-    title: `${a.studentName} ${ATTENDANCE_LABELS[a.type]}`,
+    title: `${a.studentName} ${ATTENDANCE_LABELS[a.status]}`,
     description: a.counted
       ? `${a.date} · 회차 반영${a.note ? ` · ${a.note}` : ""}`
       : `${a.date} · 회차 미차감${a.note ? ` · ${a.note}` : ""}`,

@@ -10,10 +10,11 @@ import {
   type ReactNode,
 } from "react";
 import {
-  applyAttendance,
+  applyTicketDelta,
   completePayment,
   createStudent,
   updateStudent,
+  wouldCountAttendance,
   type StudentInput,
 } from "./logic";
 import { loadData, resetData, saveData } from "./storage";
@@ -96,33 +97,48 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const markAttendance = useCallback(
-    (studentId: string, type: AttendanceType, date: string, note = "") => {
+    (studentId: string, status: AttendanceType, date: string, note = "") => {
       setData((data) => {
         const current = data.students.find((s) => s.id === studentId);
         if (!current) return data;
 
-        const { record } = applyAttendance(current, type, date, note);
-        const counted = record.counted;
+        const existing = data.attendance.find(
+          (item) => item.studentId === studentId && item.date === date
+        );
+        if (existing && existing.status === status) return data;
 
-        const students = data.students.map((student) => {
-          if (student.id !== studentId || !counted) return student;
-          const nextUsed = Math.min(
-            student.usedCount + 1,
-            student.packageSize
-          );
-          return {
-            ...student,
-            usedCount: nextUsed,
-            paymentStatus:
-              nextUsed >= student.packageSize ? "due" : student.paymentStatus,
-            updatedAt: record.createdAt,
-          };
-        });
+        const wasCounted = existing?.counted ?? false;
+        const baseline = wasCounted
+          ? applyTicketDelta(current, -1)
+          : current;
+        const counted = wouldCountAttendance(baseline, status);
+        const nextStudent = counted
+          ? applyTicketDelta(baseline, 1)
+          : baseline;
+
+        const record = {
+          id: existing?.id ?? `att_${Date.now().toString(36)}`,
+          studentId,
+          studentName: current.name,
+          date,
+          status,
+          counted,
+          note: note.trim(),
+          createdAt: existing?.createdAt ?? new Date().toISOString(),
+        };
+
+        const attendance = existing
+          ? data.attendance.map((item) =>
+              item.id === existing.id ? record : item
+            )
+          : [record, ...data.attendance];
 
         return {
           ...data,
-          students,
-          attendance: [record, ...data.attendance],
+          students: data.students.map((student) =>
+            student.id === studentId ? nextStudent : student
+          ),
+          attendance,
         };
       });
     },

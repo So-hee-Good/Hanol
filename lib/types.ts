@@ -31,11 +31,17 @@ export interface AttendanceRecord {
   studentId: string;
   studentName: string;
   date: string;
-  type: AttendanceType;
+  status: AttendanceType;
   counted: boolean;
   note: string;
   createdAt: string;
 }
+
+export const ATTENDANCE_OPTIONS: { value: AttendanceType; label: string }[] = [
+  { value: "present", label: "출석" },
+  { value: "absent", label: "결석" },
+  { value: "makeup", label: "보강" },
+];
 
 export interface PaymentRecord {
   id: string;
