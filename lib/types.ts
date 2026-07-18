@@ -58,15 +58,23 @@ export type SmsTemplateKey =
   | "absent"
   | "custom";
 
-export interface SmsHistoryItem {
+export type MessageRecipient = "parent" | "student";
+
+export type MessageStatus = "prepared";
+
+export interface MessageRecord {
   id: string;
-  templateKey: SmsTemplateKey;
-  templateLabel: string;
+  studentId: string;
+  studentName: string;
+  recipient: MessageRecipient;
+  phone: string;
   body: string;
-  recipients: { studentId: string; name: string; phone: string }[];
-  sentAt: string;
-  status: "queued";
+  status: MessageStatus;
+  createdAt: string;
 }
+
+/** @deprecated use MessageRecord */
+export type SmsHistoryItem = MessageRecord;
 
 export interface ActivityItem {
   id: string;

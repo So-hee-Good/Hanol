@@ -3,17 +3,21 @@
 import { useMemo, useState } from "react";
 import { StatusBadge } from "@/components/StatusBadge";
 import { getTemplate, renderSmsBody, SMS_TEMPLATES } from "@/lib/sms";
-import { filterStudents, remainingSessions, type StudentListFilter } from "@/lib/logic";
+import {
+  filterStudents,
+  remainingSessions,
+  type StudentListFilter,
+} from "@/lib/logic";
 import { useStore } from "@/lib/store";
-import type { SmsTemplateKey } from "@/lib/types";
+import type { MessageRecipient, SmsTemplateKey } from "@/lib/types";
 
-export default function SmsPage() {
-  const { ready, data, sendSms } = useStore();
+export default function MessagesPage() {
+  const { ready, data, saveMessage } = useStore();
   const [filter, setFilter] = useState<StudentListFilter>("due");
   const [templateKey, setTemplateKey] = useState<SmsTemplateKey>("renewal");
   const [customBody, setCustomBody] = useState(getTemplate("renewal").body);
+  const [recipient, setRecipient] = useState<MessageRecipient>("parent");
   const [selected, setSelected] = useState<string[]>([]);
-  const [message, setMessage] = useState("");
 
   const candidates = useMemo(
     () => filterStudents(data.students, "", filter),
@@ -26,6 +30,41 @@ export default function SmsPage() {
   const preview = previewStudent
     ? renderSmsBody(customBody, previewStudent)
     : customBody;
+
+  function renderBody(studentId: string): string {
+    const student = data.students.find((s) => s.id === studentId);
+    if (!student) return customBody;
+    return renderSmsBody(customBody, student);
+  }
+
+  function refresh() {
+    setSelected([]);
+  }
+
+  function prepareMessages() {
+    if (selected.length === 0) {
+      alert("발송 대상을 선택하세요.");
+      return;
+    }
+
+    selected.forEach((id) => {
+      const student = data.students.find((s) => s.id === id);
+      if (!student) return;
+      const phone =
+        recipient === "parent" ? student.parentPhone : student.studentPhone;
+      saveMessage({
+        studentId: id,
+        recipient,
+        phone,
+        body: renderBody(id),
+        status: "prepared",
+      });
+    });
+    refresh();
+    alert(
+      `${selected.length}건의 문자를 발송 준비 목록에 저장했습니다.\n실제 SMS API 연동은 다음 Sprint에서 진행합니다.`
+    );
+  }
 
   if (!ready) return <p className="muted">불러오는 중…</p>;
 
@@ -40,12 +79,12 @@ export default function SmsPage() {
   }
 
   return (
-    <>
+    <div>
       <section className="page-head">
         <h1>문자 발송</h1>
         <p>
-          조건별 대상을 고르고 템플릿을 미리본 뒤 발송 이력을 저장합니다. (실제
-          SMS API 연동 전 단계)
+          조건별 대상을 고르고 템플릿을 미리본 뒤 발송 준비 목록에 저장합니다.
+          (실제 SMS API 연동 전 단계)
         </p>
       </section>
 
@@ -92,9 +131,8 @@ export default function SmsPage() {
                   <span>
                     <strong>{s.name}</strong>
                     <div className="muted">
-                      {s.parentPhone || s.studentPhone || "연락처 없음"} ·{" "}
-                      {s.usedCount}/{s.packageSize} · 잔여{" "}
-                      {remainingSessions(s)}회
+                      학부모 {s.parentPhone || "-"} · 학생{" "}
+                      {s.studentPhone || "-"} · 잔여 {remainingSessions(s)}회
                     </div>
                     <StatusBadge student={s} />
                   </span>
@@ -106,23 +144,19 @@ export default function SmsPage() {
 
         <section className="panel">
           <h2>템플릿 · 미리보기</h2>
-          <form
-            className="inline-form"
-            onSubmit={(e) => {
-              e.preventDefault();
-              if (selected.length === 0) {
-                alert("발송 대상을 선택하세요.");
-                return;
-              }
-              const item = sendSms(templateKey, selected, customBody);
-              if (item) {
-                setMessage(
-                  `${item.recipients.length}명에게 문자 발송 이력을 저장했습니다. (대기열)`
-                );
-                setSelected([]);
-              }
-            }}
-          >
+          <div className="inline-form">
+            <label>
+              수신자
+              <select
+                value={recipient}
+                onChange={(e) =>
+                  setRecipient(e.target.value as MessageRecipient)
+                }
+              >
+                <option value="parent">학부모</option>
+                <option value="student">학생</option>
+              </select>
+            </label>
             <label>
               템플릿
               <select
@@ -153,26 +187,30 @@ export default function SmsPage() {
               {"{학년}"} · 미리보기는 첫 선택 학생 기준
             </p>
             <div className="preview-box">{preview}</div>
-            <button type="submit" className="btn primary">
-              발송 이력 저장 ({selected.length}명)
+            <button
+              type="button"
+              className="btn primary"
+              onClick={prepareMessages}
+            >
+              발송 준비 저장 ({selected.length}명)
             </button>
-            {message && <div className="toast">{message}</div>}
-          </form>
+          </div>
         </section>
       </div>
 
       <section className="panel" style={{ marginTop: "1rem" }}>
-        <h2>발송 이력</h2>
+        <h2>발송 준비 목록</h2>
         {data.messages.length === 0 ? (
-          <p className="empty">저장된 발송 이력이 없습니다.</p>
+          <p className="empty">저장된 발송 준비 이력이 없습니다.</p>
         ) : (
           <div className="table-wrap">
             <table className="data">
               <thead>
                 <tr>
                   <th>일시</th>
-                  <th>템플릿</th>
-                  <th>대상</th>
+                  <th>학생</th>
+                  <th>수신</th>
+                  <th>연락처</th>
                   <th>미리보기</th>
                   <th>상태</th>
                 </tr>
@@ -180,14 +218,16 @@ export default function SmsPage() {
               <tbody>
                 {data.messages.map((item) => (
                   <tr key={item.id}>
-                    <td>{new Date(item.sentAt).toLocaleString("ko-KR")}</td>
-                    <td>{item.templateLabel}</td>
                     <td>
-                      {item.recipients.map((r) => r.name).join(", ")}
-                      <div className="muted">{item.recipients.length}명</div>
+                      {new Date(item.createdAt).toLocaleString("ko-KR")}
                     </td>
+                    <td>{item.studentName}</td>
+                    <td>{item.recipient === "parent" ? "학부모" : "학생"}</td>
+                    <td>{item.phone || "-"}</td>
                     <td style={{ maxWidth: 280 }}>{item.body}</td>
-                    <td>대기열</td>
+                    <td>
+                      <span className="badge success">발송 준비</span>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -195,6 +235,6 @@ export default function SmsPage() {
           </div>
         )}
       </section>
-    </>
+    </div>
   );
 }

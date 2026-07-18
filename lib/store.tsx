@@ -18,12 +18,11 @@ import {
   type StudentInput,
 } from "./logic";
 import { loadData, resetData, saveData } from "./storage";
-import { getTemplate, renderSmsBody } from "./sms";
 import type {
   AppData,
   AttendanceType,
-  SmsHistoryItem,
-  SmsTemplateKey,
+  MessageRecord,
+  MessageRecipient,
   Student,
   StudentStatus,
 } from "./types";
@@ -41,11 +40,13 @@ interface StoreValue {
     note?: string
   ) => void;
   markPayment: (studentId: string, amount?: number, note?: string) => void;
-  sendSms: (
-    templateKey: SmsTemplateKey,
-    studentIds: string[],
-    customBody?: string
-  ) => SmsHistoryItem | null;
+  saveMessage: (input: {
+    studentId: string;
+    recipient: MessageRecipient;
+    phone: string;
+    body: string;
+    status?: MessageRecord["status"];
+  }) => MessageRecord | null;
   resetAll: () => void;
 }
 
@@ -172,31 +173,26 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     []
   );
 
-  const sendSms = useCallback(
-    (
-      templateKey: SmsTemplateKey,
-      studentIds: string[],
-      customBody?: string
-    ): SmsHistoryItem | null => {
-      const template = getTemplate(templateKey);
-      const targets = data.students.filter((s) => studentIds.includes(s.id));
-      if (targets.length === 0) return null;
+  const saveMessage = useCallback(
+    (input: {
+      studentId: string;
+      recipient: MessageRecipient;
+      phone: string;
+      body: string;
+      status?: MessageRecord["status"];
+    }): MessageRecord | null => {
+      const student = data.students.find((s) => s.id === input.studentId);
+      if (!student) return null;
 
-      const bodySource = customBody?.trim() || template.body;
-      const previewBody = renderSmsBody(bodySource, targets[0]);
-
-      const item: SmsHistoryItem = {
-        id: `sms_${Date.now().toString(36)}`,
-        templateKey,
-        templateLabel: template.label,
-        body: previewBody,
-        recipients: targets.map((s) => ({
-          studentId: s.id,
-          name: s.name,
-          phone: s.parentPhone || s.studentPhone,
-        })),
-        sentAt: new Date().toISOString(),
-        status: "queued",
+      const item: MessageRecord = {
+        id: `msg_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`,
+        studentId: input.studentId,
+        studentName: student.name,
+        recipient: input.recipient,
+        phone: input.phone.trim(),
+        body: input.body.trim(),
+        status: input.status ?? "prepared",
+        createdAt: new Date().toISOString(),
       };
 
       setData((prev) => ({
@@ -222,7 +218,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       removeStudent,
       markAttendance,
       markPayment,
-      sendSms,
+      saveMessage,
       resetAll,
     }),
     [
@@ -233,7 +229,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       removeStudent,
       markAttendance,
       markPayment,
-      sendSms,
+      saveMessage,
       resetAll,
     ]
   );
