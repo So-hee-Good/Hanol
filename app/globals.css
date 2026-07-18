@@ -787,6 +787,12 @@ textarea {
   color: white;
 }
 
+.primary-button.compact {
+  padding: 0.45rem 0.75rem;
+  font-size: 0.86rem;
+  white-space: nowrap;
+}
+
 .secondary-button {
   border: 1px solid var(--line);
   background: white;
