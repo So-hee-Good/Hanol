@@ -1211,7 +1211,9 @@ table.data tbody tr:hover {
   .stat-grid,
   .dashboard-grid,
   .two-col,
-  .form-grid {
+  .form-grid,
+  .message-layout,
+  .message-controls {
     grid-template-columns: 1fr;
   }
 
