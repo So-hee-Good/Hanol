@@ -53,10 +53,14 @@ export default function PaymentsPage() {
                   <tr key={s.id}>
                     <td>
                       <strong>{s.name}</strong>
-                      <div className="muted">{s.parentPhone || s.phone || "-"}</div>
+                      <div className="muted">
+                        {s.parentName ? `${s.parentName} · ` : ""}
+                        {s.parentPhone || s.studentPhone || "-"}
+                      </div>
                     </td>
                     <td>
-                      {s.school || "-"} · {s.className || s.grade || "-"}
+                      {s.school || "-"} · {s.grade || "-"}
+                      <div className="muted">{s.className || "-"}</div>
                     </td>
                     <td>
                       {s.usedCount}/{s.packageSize}
@@ -70,10 +74,10 @@ export default function PaymentsPage() {
                         type="button"
                         className="btn sm accent"
                         onClick={() => {
-                          const amountRaw = prompt(
-                            "수납 금액을 입력하세요 (원)",
-                            "120000"
-                          );
+                            const amountRaw = prompt(
+                              "수납 금액을 입력하세요 (원)",
+                              String(s.tuition || 120000)
+                            );
                           if (amountRaw == null) return;
                           const amount = Number(amountRaw.replace(/,/g, ""));
                           if (!Number.isFinite(amount) || amount < 0) {

@@ -14,6 +14,7 @@ import {
   completePayment,
   createStudent,
   updateStudent,
+  type StudentInput,
 } from "./logic";
 import { loadData, resetData, saveData } from "./storage";
 import { getTemplate, renderSmsBody } from "./sms";
@@ -26,36 +27,11 @@ import type {
   StudentStatus,
 } from "./types";
 
-type StudentInput = {
-  name: string;
-  phone: string;
-  parentPhone: string;
-  school?: string;
-  className?: string;
-  grade?: string;
-  memo?: string;
-};
-
 interface StoreValue {
   ready: boolean;
   data: AppData;
   addStudent: (input: StudentInput) => void;
-  editStudent: (
-    id: string,
-    patch: Partial<
-      Pick<
-        Student,
-        | "name"
-        | "phone"
-        | "parentPhone"
-        | "school"
-        | "className"
-        | "grade"
-        | "memo"
-        | "status"
-      >
-    >
-  ) => void;
+  editStudent: (id: string, patch: Partial<StudentInput>) => void;
   removeStudent: (id: string) => void;
   markAttendance: (
     studentId: string,
@@ -63,7 +39,7 @@ interface StoreValue {
     date: string,
     note?: string
   ) => void;
-  markPayment: (studentId: string, amount: number, note?: string) => void;
+  markPayment: (studentId: string, amount?: number, note?: string) => void;
   sendSms: (
     templateKey: SmsTemplateKey,
     studentIds: string[],
@@ -101,22 +77,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const editStudent = useCallback(
-    (
-      id: string,
-      patch: Partial<
-        Pick<
-          Student,
-          | "name"
-          | "phone"
-          | "parentPhone"
-          | "school"
-          | "className"
-          | "grade"
-          | "memo"
-          | "status"
-        >
-      >
-    ) => {
+    (id: string, patch: Partial<StudentInput>) => {
       setData((prev) => ({
         ...prev,
         students: prev.students.map((s) =>
@@ -169,7 +130,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   );
 
   const markPayment = useCallback(
-    (studentId: string, amount: number, note = "") => {
+    (studentId: string, amount?: number, note = "") => {
       setData((data) => {
         const student = data.students.find((s) => s.id === studentId);
         if (!student) return data;
@@ -216,7 +177,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         recipients: targets.map((s) => ({
           studentId: s.id,
           name: s.name,
-          phone: s.parentPhone || s.phone,
+          phone: s.parentPhone || s.studentPhone,
         })),
         sentAt: new Date().toISOString(),
         status: "queued",
@@ -272,4 +233,4 @@ export function useStore(): StoreValue {
   return ctx;
 }
 
-export type { StudentStatus };
+export type { Student, StudentStatus };

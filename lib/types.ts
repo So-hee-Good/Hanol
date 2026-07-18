@@ -4,18 +4,22 @@ export type PaymentStatus = "normal" | "due";
 
 export type AttendanceType = "present" | "absent" | "makeup";
 
+export type StudentListFilter = "all" | "active" | "one" | "due" | "paused";
+
 export interface Student {
   id: string;
   name: string;
-  phone: string;
+  studentPhone: string;
+  parentName: string;
   parentPhone: string;
   school: string;
-  className: string;
   grade: string;
-  memo: string;
+  className: string;
+  note: string;
   status: StudentStatus;
   usedCount: number;
   packageSize: number;
+  tuition: number;
   paymentStatus: PaymentStatus;
   lastPaymentAt: string | null;
   createdAt: string;
@@ -73,13 +77,13 @@ export interface AppData {
 }
 
 export const STATUS_LABELS: Record<StudentStatus, string> = {
-  active: "수강중",
+  active: "재원",
   paused: "휴원",
   withdrawn: "퇴원",
 };
 
 export const PAYMENT_LABELS: Record<PaymentStatus, string> = {
-  normal: "수납 완료",
+  normal: "수강 중",
   due: "등록 안내 필요",
 };
 
@@ -88,6 +92,23 @@ export const ATTENDANCE_LABELS: Record<AttendanceType, string> = {
   absent: "결석",
   makeup: "보강",
 };
+
+export const GRADE_OPTIONS = [
+  "초1",
+  "초2",
+  "초3",
+  "초4",
+  "초5",
+  "초6",
+  "중1",
+  "중2",
+  "중3",
+  "고1",
+  "고2",
+  "고3",
+] as const;
+
+export const PACKAGE_OPTIONS = [4, 6, 8, 10, 12] as const;
 
 export const SESSION_LIMIT = 4;
 

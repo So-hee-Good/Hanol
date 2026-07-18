@@ -9,6 +9,7 @@ import {
   type AttendanceType,
   type PaymentRecord,
   type Student,
+  type StudentListFilter,
   type StudentStatus,
 } from "./types";
 
@@ -20,29 +21,37 @@ function newId(prefix: string): string {
   return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 7)}`;
 }
 
-export function createStudent(input: {
+export type StudentInput = {
   name: string;
-  phone: string;
-  parentPhone: string;
+  studentPhone?: string;
+  parentName?: string;
+  parentPhone?: string;
   school?: string;
-  className?: string;
   grade?: string;
-  memo?: string;
-}): Student {
+  className?: string;
+  note?: string;
+  packageSize?: number;
+  tuition?: number;
+  status?: StudentStatus;
+};
+
+export function createStudent(input: StudentInput): Student {
   const ts = nowIso();
-  const className = (input.className ?? input.grade ?? "").trim();
+  const packageSize = input.packageSize ?? SESSION_LIMIT;
   return {
     id: newId("stu"),
     name: input.name.trim(),
-    phone: input.phone.trim(),
-    parentPhone: input.parentPhone.trim(),
+    studentPhone: (input.studentPhone ?? "").trim(),
+    parentName: (input.parentName ?? "").trim(),
+    parentPhone: (input.parentPhone ?? "").trim(),
     school: (input.school ?? "").trim(),
-    className,
-    grade: (input.grade ?? className).trim(),
-    memo: (input.memo ?? "").trim(),
-    status: "active",
+    grade: (input.grade ?? "").trim(),
+    className: (input.className ?? "").trim(),
+    note: (input.note ?? "").trim(),
+    status: input.status ?? "active",
     usedCount: 0,
-    packageSize: SESSION_LIMIT,
+    packageSize,
+    tuition: input.tuition ?? 120000,
     paymentStatus: "normal",
     lastPaymentAt: null,
     createdAt: ts,
@@ -52,32 +61,21 @@ export function createStudent(input: {
 
 export function updateStudent(
   student: Student,
-  patch: Partial<
-    Pick<
-      Student,
-      | "name"
-      | "phone"
-      | "parentPhone"
-      | "school"
-      | "className"
-      | "grade"
-      | "memo"
-      | "status"
-    >
-  >
+  patch: Partial<StudentInput>
 ): Student {
-  const className = patch.className?.trim() ?? student.className;
-  const grade = patch.grade?.trim() ?? patch.className?.trim() ?? student.grade;
   return {
     ...student,
-    ...patch,
     name: patch.name?.trim() ?? student.name,
-    phone: patch.phone?.trim() ?? student.phone,
+    studentPhone: patch.studentPhone?.trim() ?? student.studentPhone,
+    parentName: patch.parentName?.trim() ?? student.parentName,
     parentPhone: patch.parentPhone?.trim() ?? student.parentPhone,
     school: patch.school?.trim() ?? student.school,
-    className,
-    grade,
-    memo: patch.memo?.trim() ?? student.memo,
+    grade: patch.grade?.trim() ?? student.grade,
+    className: patch.className?.trim() ?? student.className,
+    note: patch.note?.trim() ?? student.note,
+    packageSize: patch.packageSize ?? student.packageSize,
+    tuition: patch.tuition ?? student.tuition,
+    status: patch.status ?? student.status,
     updatedAt: nowIso(),
   };
 }
@@ -123,16 +121,17 @@ export function applyAttendance(
 /** 수납 완료 후 새 4회권 자동 시작 */
 export function completePayment(
   student: Student,
-  amount: number,
+  amount?: number,
   note = ""
 ): { student: Student; payment: PaymentRecord } {
   const paidAt = nowIso();
+  const paymentAmount = amount ?? student.tuition;
 
   const payment: PaymentRecord = {
     id: newId("pay"),
     studentId: student.id,
     studentName: student.name,
-    amount,
+    amount: paymentAmount,
     paidAt,
     note: note.trim(),
   };
@@ -140,7 +139,6 @@ export function completePayment(
   const nextStudent: Student = {
     ...student,
     usedCount: 0,
-    packageSize: SESSION_LIMIT,
     paymentStatus: "normal",
     lastPaymentAt: payment.paidAt,
     status: student.status === "withdrawn" ? "withdrawn" : "active",
@@ -150,8 +148,6 @@ export function completePayment(
   return { student: nextStudent, payment };
 }
 
-export type StudentListFilter = StudentStatus | "renewal_needed" | "all";
-
 export function filterStudents(
   students: Student[],
   query: string,
@@ -159,18 +155,26 @@ export function filterStudents(
 ): Student[] {
   const q = query.trim().toLowerCase();
   return students.filter((s) => {
+    const remaining = remainingSessions(s);
     const statusOk =
       status === "all" ||
-      (status === "renewal_needed" ? needsRenewal(s) : s.status === status);
+      (status === "due"
+        ? needsRenewal(s)
+        : status === "one"
+          ? !needsRenewal(s) && remaining === 1
+          : status === "active"
+            ? s.status === "active" && !needsRenewal(s)
+            : s.status === status);
     if (!statusOk) return false;
     if (!q) return true;
     return (
       s.name.toLowerCase().includes(q) ||
-      s.phone.includes(q) ||
-      s.parentPhone.includes(q) ||
       s.school.toLowerCase().includes(q) ||
       s.className.toLowerCase().includes(q) ||
-      s.grade.toLowerCase().includes(q)
+      s.grade.toLowerCase().includes(q) ||
+      s.parentName.toLowerCase().includes(q) ||
+      s.parentPhone.includes(q) ||
+      s.studentPhone.includes(q)
     );
   });
 }
@@ -188,7 +192,7 @@ export function recentActivity(data: AppData, limit = 8): ActivityItem[] {
   const paymentItems: ActivityItem[] = data.payments.map((p) => ({
     id: p.id,
     title: `${p.studentName} 수납 완료`,
-    description: `${p.amount.toLocaleString("ko-KR")}원 · 새 4회권 시작${
+    description: `${p.amount.toLocaleString("ko-KR")}원 · 새 수업권 시작${
       p.note ? ` · ${p.note}` : ""
     }`,
     date: p.paidAt,
@@ -199,4 +203,5 @@ export function recentActivity(data: AppData, limit = 8): ActivityItem[] {
     .slice(0, limit);
 }
 
+export type { StudentListFilter };
 export { remainingSessions, needsRenewal };

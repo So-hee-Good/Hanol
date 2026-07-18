@@ -5,11 +5,11 @@ import { StatusBadge } from "@/components/StatusBadge";
 import { getTemplate, renderSmsBody, SMS_TEMPLATES } from "@/lib/sms";
 import { filterStudents, remainingSessions, type StudentListFilter } from "@/lib/logic";
 import { useStore } from "@/lib/store";
-import { STATUS_LABELS, type SmsTemplateKey, type StudentStatus } from "@/lib/types";
+import type { SmsTemplateKey } from "@/lib/types";
 
 export default function SmsPage() {
   const { ready, data, sendSms } = useStore();
-  const [filter, setFilter] = useState<StudentListFilter>("renewal_needed");
+  const [filter, setFilter] = useState<StudentListFilter>("due");
   const [templateKey, setTemplateKey] = useState<SmsTemplateKey>("renewal");
   const [customBody, setCustomBody] = useState(getTemplate("renewal").body);
   const [selected, setSelected] = useState<string[]>([]);
@@ -61,12 +61,10 @@ export default function SmsPage() {
               }}
             >
               <option value="all">전체 학생</option>
-              <option value="renewal_needed">등록 안내 필요</option>
-              {(Object.keys(STATUS_LABELS) as StudentStatus[]).map((key) => (
-                <option key={key} value={key}>
-                  {STATUS_LABELS[key]}
-                </option>
-              ))}
+              <option value="due">등록 안내 필요</option>
+              <option value="one">잔여 1회</option>
+              <option value="active">재원생</option>
+              <option value="paused">휴원</option>
             </select>
             <button type="button" className="btn ghost sm" onClick={selectAll}>
               전체 선택
@@ -94,7 +92,7 @@ export default function SmsPage() {
                   <span>
                     <strong>{s.name}</strong>
                     <div className="muted">
-                      {s.parentPhone || s.phone || "연락처 없음"} ·{" "}
+                      {s.parentPhone || s.studentPhone || "연락처 없음"} ·{" "}
                       {s.usedCount}/{s.packageSize} · 잔여{" "}
                       {remainingSessions(s)}회
                     </div>

@@ -94,7 +94,7 @@ export default function DashboardPage() {
                     <strong>{student.name}</strong>
                     <span>
                       {student.school || "학교 미입력"} ·{" "}
-                      {student.className || student.grade || "-"}
+                      {student.grade || "-"} · {student.className || "-"}
                     </span>
                   </div>
                   <div className="ticket-mini danger-text">
